@@ -1,38 +1,45 @@
-# How to use this repo#
+# Sample Kit Using Web Servlets
+This is a sample php kit using php development web server.
 
-### What is this repository for? ###
+## Setup
+- Place config.json file inside resources folder, ensure fields like API_KEY, MERCHANT_ID, PAYMENT_PAGE_CLIENT_ID & BASE_URL are populated.
+- Incase of SSL Certificate Error add cacert with PaymentHandlerConfig's method `withCacert("path to cacertificate")` or add it to php.ini (curl.cainfo)
 
-* This repo is being used for Juspay Documentation made using tesseract repo
-* This directory contains demo integration project for Juspay's suite of products
+### Rest endpoints
+| Environment       | Endpoint                             |
+|-------------------|--------------------------------------|
+| Sandbox (default) | https://smartgatewayuat.hdfcbank.com |
+| Production        | 	https://smartgateway.hdfcbank.com  |
 
-Refer to our [Developer Docs](https://docs.juspay.in/) for details around the integration process.
+configure this in BASE_URL
 
-### Maintained Examples
+## Contents
+### initiatePayment.php
+This initiates payment to payment server it calls /session api.
 
-| Folder Name                  | Product                                  | Platform                                   |
-|------------------------------|------------------------------------------|--------------------------------------------|
-| api-reference                | Collection of APIs used across products  | Agnostic                                   |
-| ec-headless-sample           | Express Checkout SDK                     | Andriod, iOS, Flutter, React, Cordova      |
-| payment-page-android         | Payment Page                             | Android                                    |
-| payment-page-ios             | Payment Page                             | iOS                                        |
-| payment-page-web             | Payment Page                             | Web                                        |
-| payment-page-flutter         | Payment Page                             | Flutter                                    |
-| payment-page-cordova         | Payment page                             | Cordova                                    |
-| payment-page-react-native    | Payment page                             | React Native                               |
-| payment-page-payment-locking | Payment locking feature for Payment Page | Andriod, iOS, Flutter, React, Cordova      |
-| payv3-forms                  | payv3                                    | Web                                        |
-| payment-page-sample-payload  | Sample payload for payment page          | Andriod, iOS, Flutter, React, Cordova, Web |
+### handlePaymentResponse.php
+Payment flow ends here, with hmac verification and order status call. This is the return url specified in /session api call or can be configured through dasboard.
 
-### How do I get set up? ###
 
-* This repo is used to show the code section of the documentation.
+### initiateRefund.php
+It takes three params unique_request_id, order_id, amount and initiates refund to server, it calls /refunds api.
 
-### Contribution guidelines ###
+### initiatePaymentDataForm.php
+This is an example of checkout page and demo page for /session api spec, please note that all the fields are kept readonly intentionally because we
+recommend you to construct these params at server side. Send product-id from frontend and make a lookup at server side for amount.
 
-* If you want to add any new product and/or platform. please follow the below steps.
+### initiateRefundDataForm.html
+This is just an example of checkout page and demo page for /refunds api spec
 
-1. All the code content of a particular platform of a product is kept in a branch "productName" + "-" + "platformName".
-    Let suppose you are adding code for platform android in the product payment-page then the name of the branch will be 
-        payment-page-android
+### PaymentHandler class
+This is where all the business logic is for calling payments api exists
 
-2. And payment-page-android code have both Java and Kotlin so there will be two folders named accordingly and each folder should contain their demo code.
+
+### run
+```bash
+php -S localhost:5000
+```
+Goto:- http://localhost:5000/initiatePaymentDataForm.php
+
+[:warning:]
+<mark>This sample project uses php development web server don't use it in production<mark>
