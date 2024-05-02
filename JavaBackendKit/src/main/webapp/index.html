@@ -27,7 +27,7 @@
     #submitBtn {
        align-self: center;
     }
-
+​
     .button-1 {
         background-color: #05f;
         border-radius: 8px;
@@ -45,7 +45,7 @@
         transition: color 100ms;
         vertical-align: baseline;
     }
-
+​
     .button-1:hover,
     .button-1:focus {
         background-color: #472ed5;
@@ -56,17 +56,17 @@
     }
 </style>
 <body>
-    <div class="heading">
-        <h2>Checkout Screen</h2>
+<div class="heading">
+    <h2>Checkout Screen</h2>
+</div>
+<div class="container">
+    <div class="form">
+        <button id="submitBtn" class="button-1">Open Payment Page</button>
     </div>
-    <div class="container">
-        <div class="form">
-            <button id="submitBtn" class="button-1">Open Payment Page</button>
-        </div>
-    </div>
-    <script>
+</div>
+<script>
         document.getElementById("submitBtn").addEventListener("click", function() {
-
+​
 <!--block:start:open-paymentpage-->
             var xhr = new XMLHttpRequest();
             xhr.open("POST", 'initiateJuspayPayment', true);
@@ -84,7 +84,7 @@
                 }
             };
 <!--block:end:open-paymentpage-->
-            
+
             xhr.send(null);
         });
     </script>
