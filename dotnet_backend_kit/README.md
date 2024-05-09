@@ -33,7 +33,7 @@ This is an example of checkout page and demo page for /session api spec, please 
 This is just an example of checkout page and demo page for our /refunds api spec
 
 ### PaymentHandler class
-This is where all the business logic is for calling our payments api
+This is where all the business logic for calling our payments api
 
 ## Quick run this project using jetty?
 ### Setup and run
