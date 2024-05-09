@@ -1,0 +1,20 @@
+@model RefundStatusViewModel
+@{
+    ViewData["Title"] = "Merchant refund status page";
+}
+<body>
+    <h1>Refund status:- @Model.Refund["status"]</h1>
+    <p>Here is the stringified map response:- </p>
+    <p>@Model.StringifiedRefund</p>
+    <center>
+        <font size="4" color="blue"><b>Response received from order status payment server call</b></font>
+        <table border="1">
+            @foreach (KeyValuePair<string, string> value in Model.Refund) {
+                    <tr>
+                        <td>@value.Key</td>
+                        <td>@value.Value</td>
+                    </tr>
+            }
+        </table>
+    </center>
+</body>

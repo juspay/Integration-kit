@@ -1,0 +1,30 @@
+@model OrderStatusViewModel
+@{
+    ViewData["Title"] = "Merchant payment status page";
+}
+<body>
+    <h1>@Model.Message</h1>
+    <center>
+        <font size="4" color="blue"><b>Return url request body params</b></font>
+        <table border="1">
+            @foreach (KeyValuePair<string, string> value in Model.RequestParams) {
+                    <tr>
+                        <td>@value.Key</td>
+                        <td>@value.Value</td>
+                    </tr>
+            }
+        </table>
+    </center>
+
+    <center>
+        <font size="4" color="blue"><b>Response received from order status payment server call</b></font>
+         <table border="1">
+            @foreach (KeyValuePair<string, string> value in Model.Order) {
+                    <tr>
+                        <td>@value.Key</td>
+                        <td>@value.Value</td>
+                    </tr>
+            }
+        </table>
+    </center>
+</body>
