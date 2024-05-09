@@ -1,0 +1,29 @@
+{
+  "Files": [
+    {
+      "Id": "/Users/ramprakash.v/samplekitphpsdk-demoproject/juspay-sdk-integration-demo/dotnet_backend_kit/wwwroot/InitiatePaymentDataForm.html",
+      "PackagePath": "staticwebassets/InitiatePaymentDataForm.html"
+    },
+    {
+      "Id": "/Users/ramprakash.v/samplekitphpsdk-demoproject/juspay-sdk-integration-demo/dotnet_backend_kit/wwwroot/InitiateRefundDataForm.html",
+      "PackagePath": "staticwebassets/InitiateRefundDataForm.html"
+    },
+    {
+      "Id": "obj/Debug/net7.0/staticwebassets/msbuild.SmartGatewayDotnetBackendApiKeyKit.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net7.0/staticwebassets/msbuild.build.SmartGatewayDotnetBackendApiKeyKit.props",
+      "PackagePath": "build\\SmartGatewayDotnetBackendApiKeyKit.props"
+    },
+    {
+      "Id": "obj/Debug/net7.0/staticwebassets/msbuild.buildMultiTargeting.SmartGatewayDotnetBackendApiKeyKit.props",
+      "PackagePath": "buildMultiTargeting\\SmartGatewayDotnetBackendApiKeyKit.props"
+    },
+    {
+      "Id": "obj/Debug/net7.0/staticwebassets/msbuild.buildTransitive.SmartGatewayDotnetBackendApiKeyKit.props",
+      "PackagePath": "buildTransitive\\SmartGatewayDotnetBackendApiKeyKit.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

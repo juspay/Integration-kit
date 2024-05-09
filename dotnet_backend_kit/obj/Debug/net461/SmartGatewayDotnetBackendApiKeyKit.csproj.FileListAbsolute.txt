@@ -1,0 +1,6 @@
+/Users/ramprakash.v/SmartGatewayDotnetBackendApiKeyKit/dotnet/obj/Debug/net461/SmartGatewayDotnetBackendApiKeyKit.csproj.AssemblyReference.cache
+/Users/ramprakash.v/SmartGatewayDotnetBackendApiKeyKit/dotnet/obj/Debug/net461/SmartGatewayDotnetBackendApiKeyKit.csproj.SuggestedBindingRedirects.cache
+/Users/ramprakash.v/SmartGatewayDotnetBackendApiKeyKit/dotnet/obj/Debug/net461/SmartGatewayDotnetBackendApiKeyKit.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ramprakash.v/SmartGatewayDotnetBackendApiKeyKit/dotnet/obj/Debug/net461/SmartGatewayDotnetBackendApiKeyKit.AssemblyInfoInputs.cache
+/Users/ramprakash.v/SmartGatewayDotnetBackendApiKeyKit/dotnet/obj/Debug/net461/SmartGatewayDotnetBackendApiKeyKit.AssemblyInfo.cs
+/Users/ramprakash.v/SmartGatewayDotnetBackendApiKeyKit/dotnet/obj/Debug/net461/SmartGatewayDotnetBackendApiKeyKit.csproj.CoreCompileInputs.cache
