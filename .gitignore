@@ -56,3 +56,7 @@ Thumbs.db
 
 # Vendor files
 vendor/
+obj/
+bin/
+*.vs
+packages/
