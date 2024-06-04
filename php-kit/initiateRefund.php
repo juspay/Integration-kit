@@ -7,7 +7,9 @@ $amount = $_POST["amount"];
 $refundId = $_POST["unique_request_id"];
 $paymentHandler = new PaymentHandler("resources/config.json");
 try {
+    // block:start:refund-function
     $refund = $paymentHandler->refund(["order_id" => $orderId, "amount" => $amount, "unique_request_id" => $refundId]);
+    // block:end:refund-function
 }  catch (APIException $e ) {
     http_response_code(500);
     $error = json_encode(["message" => $e->getErrorMessage(), "error_code" => $e->getErrorCode(), "http_response_code" => $e->getHttpResponseCode()]);
