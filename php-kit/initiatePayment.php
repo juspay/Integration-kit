@@ -7,9 +7,11 @@ $paymentHandler = new PaymentHandler("resources/config.json");
 
 $orderId = "php_sdk_" . uniqid();
 $customerId = "php_sdk_customer" . uniqid();
+// block:start:session-function
 $params = json_decode("{\n\"amount\":\"10.00\",\n\"order_id\":\"$orderId\",\n\"customer_id\":\"$customerId\",\n\"action\":\"paymentPage\",\n\"return_url\": \"http://localhost:5000/handlePaymentResponse.php\"\n}", true);
 try {
     $session = $paymentHandler->orderSession($params);
+    // block:end:session-function
     $redirect = $session["payment_links"]["web"];
     header("Location: {$redirect}");
     exit;
