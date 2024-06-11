@@ -49,7 +49,6 @@ Thumbs.db
 *.wmv
 
 # Keys
-*.pem
 
 # Lock files
 *.lock

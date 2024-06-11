@@ -155,6 +155,8 @@ class PaymentEntity {
 		$ca = ini_get( 'curl.cainfo' );
 		$ca = $ca === null || $ca === "" ? ini_get( 'openssl.cafile' ) : $ca;
 		if ( $ca === null || $ca === "" ) {
+			$certPath = __DIR__ . '/../resources/ca-cert.pem';
+			PaymentHandlerConfig::getInstance()->withCacert( $certPath );
 			$caCertificatePath = PaymentHandlerConfig::getInstance()->getCacert();
 			curl_setopt( $curlObject, CURLOPT_CAINFO, $caCertificatePath );
 		}
