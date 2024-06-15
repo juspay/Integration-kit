@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 
@@ -17,13 +18,13 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers
             return Utility.ValidateHMAC_SHA256(input, PaymentHandlerConfig.Instance.RESPONSE_KEY);
         }
 
-        public dynamic GetOrder(string orderId)
+        public Task<dynamic> GetOrder(string orderId)
         {
             PaymentHandler paymentHandler = new PaymentHandler();
             return paymentHandler.OrderStatus(orderId);
         }
 
-        public ActionResult handlePaymentResponse()
+        public async Task<ActionResult> handlePaymentResponse()
         {
             string orderId = HttpContext.Request.Form["order_id"];
             string status = HttpContext.Request.Form["status"];
@@ -33,7 +34,7 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers
             Dictionary<string, string> RequestParams = new Dictionary<string, string> { { "order_id", orderId }, { "status", status }, { "status_id", statusId }, { "signature", signature }, { "signature_algorithm", "HMAC-SHA256" } };
             if (ValidateHMAC(RequestParams))
             {
-                var order = GetOrder(orderId);
+                var order = await GetOrder(orderId);
                 string message = null;
                 switch ((string)order.status)
                 {
@@ -70,16 +71,16 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers
         }
         [HttpPost]
         [Route("HandlePaymentResponse")]
-        public ActionResult Post()
+        public async Task<ActionResult> Post()
         {
-            return handlePaymentResponse();
+            return await handlePaymentResponse();
         }
 
         [HttpGet]
         [Route("HandlePaymentResponse")]
-        public ActionResult Get()
+        public async Task<ActionResult> Get()
         {
-            return handlePaymentResponse();
+            return await handlePaymentResponse();
         }
     }
 }

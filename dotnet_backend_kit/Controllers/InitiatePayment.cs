@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using PaymentHandlers;
 using System.Collections.Generic;
 using System;
+using System.Threading.Tasks;
 
 namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
 
@@ -18,7 +19,7 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
         }
 
         [HttpPost]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             string orderId = $"order_{new Random().Next()}";
             int amount = new Random().Next(0, 100);
@@ -33,7 +34,7 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
                             { "action", "paymentPage" },
                             { "return_url", "http://localhost:5000/handlePaymentResponse" }
                     };
-            var orderSession = paymentHandler.OrderSession(sessionInput);
+            var orderSession = await paymentHandler.OrderSession(sessionInput);
             if (orderSession?.payment_links?.web != null) return Redirect((string)orderSession.payment_links.web);
             throw new Exception("Invalid Response unable to find web payment link");
         }

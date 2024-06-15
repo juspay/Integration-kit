@@ -32,28 +32,18 @@ namespace PaymentHandlers {
             this.paymentHandlerConfig = paymentHandlerConfig;
         }
 
-        public dynamic OrderStatus(string orderId) {
-            return OrderStatusAsync(orderId).ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-
-        public dynamic OrderStatus(string orderId, Dictionary<string, object> parameters) {
-            return OrderStatusAsync(orderId, parameters).ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-        public Task<dynamic> OrderStatusAsync(string orderId)
+     
+        public Task<dynamic> OrderStatus(string orderId)
         {
-            return OrderStatusAsync(orderId, null);
+            return OrderStatus(orderId, null);
         }
 
-        public  Task<dynamic> OrderStatusAsync(string orderId, Dictionary<string, object> parameters)
+        public  Task<dynamic> OrderStatus(string orderId, Dictionary<string, object> parameters)
         {
             return CallAPI($"/orders/{orderId}",  HttpMethod.Get, "ORDER_STATUS", ContentType.JSON, parameters);
         }
 
-        public dynamic OrderSession(Dictionary<string, object> parameters) {
-            return OrderSessionAsync(parameters).ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-
-        public Task<dynamic> OrderSessionAsync(Dictionary<string, object> parameters)
+        public Task<dynamic> OrderSession(Dictionary<string, object> parameters)
         {
             if (parameters != null && !parameters.ContainsKey("payment_page_client_id"))
             {
@@ -68,10 +58,7 @@ namespace PaymentHandlers {
             return CallAPI("/session", HttpMethod.Post, "ORDER_SESSION", ContentType.JSON, parameters);
         }
 
-        public dynamic Refund(Dictionary<string, object> parameters) {
-            return RefundAsync(parameters).ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-        public Task<dynamic> RefundAsync(Dictionary<string, object> parameters)
+        public Task<dynamic> Refund(Dictionary<string, object> parameters)
         {
             return CallAPI("/refunds", HttpMethod.Post, "ORDER_REFUND", ContentType.X_WWW_FORM_URLENCODED, parameters);
         }
@@ -86,6 +73,11 @@ namespace PaymentHandlers {
             string endpoint = paymentHandlerConfig.BASE_URL + path;
             HttpRequestMessage request = new HttpRequestMessage(method, endpoint);
             using (var client = new HttpClient()) {
+                #if  NETCOREAPP3_0_OR_GREATER || NET47_OR_GREATER
+                    ServicePointManager.SecurityProtocol  = SecurityProtocolType.SystemDefault;
+                #else
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                #endif
                 string encodedAuthHeader =  Convert.ToBase64String(Encoding.UTF8.GetBytes(paymentHandlerConfig.API_KEY));
                 request.Headers.Add("Authorization", $"Basic {encodedAuthHeader}");
                 request.Headers.Add("x-merchantid", paymentHandlerConfig.MERCHANT_ID);

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SmartGatewayDotnetBackendApiKeyKit.Models;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PaymentHandlers;
 using System.Collections.Generic;
@@ -23,12 +24,12 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
             return Utility.ValidateHMAC_SHA256(input, PaymentHandlerConfig.Instance.RESPONSE_KEY);
         }
 
-        public dynamic GetOrder(string orderId) {
+        public Task<dynamic> GetOrder(string orderId) {
             PaymentHandler paymentHandler = new PaymentHandler();
             return paymentHandler.OrderStatus(orderId);
         }
 
-        public IActionResult HandleJuspayResponse() {
+        public async Task<IActionResult> HandleJuspayResponse() {
             string orderId = HttpContext.Request.Form["order_id"];
             string status = HttpContext.Request.Form["status"];
             string signature = HttpContext.Request.Form["signature"];
@@ -36,7 +37,7 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
             if (orderId == null || status == null || signature == null || statusId == null) return BadRequest();
             Dictionary<string, string> RequestParams = new Dictionary<string, string> { { "order_id", orderId }, { "status", status }, { "status_id", statusId }, { "signature", signature }, { "signature_algorithm", "HMAC-SHA256"} };
             if (ValidateHMAC(RequestParams)) {
-                var order = GetOrder(orderId);
+                var order = await GetOrder(orderId);
                 string message = null;
                 switch ((string)order.status) {
                     case "CHARGED":
@@ -72,13 +73,13 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
 
 
         [HttpGet]
-        public IActionResult Get()
+        public Task<IActionResult> Get()
         {
             return HandleJuspayResponse();
         }
 
         [HttpPost]
-        public IActionResult Post()
+        public Task<IActionResult> Post()
         {
             return HandleJuspayResponse();
         }

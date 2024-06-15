@@ -25,9 +25,9 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers
                             { "customer_id", customerId },
                             { "payment_page_client_id", paymentHandler.paymentHandlerConfig.PAYMENT_PAGE_CLIENT_ID },
                             { "action", "paymentPage" },
-                            { "return_url", "https://localhost:44357/handlePaymentResponse" }
+                            { "return_url", "http://localhost:5000/handlePaymentResponse" }
                     };
-            var orderSession = await paymentHandler.OrderSessionAsync(sessionInput);
+            var orderSession = await paymentHandler.OrderSession(sessionInput);
             if (orderSession?.payment_links?.web != null) return Redirect((string)orderSession.payment_links.web);
             throw new Exception("Invalid Response unable to find web payment link");
         }
