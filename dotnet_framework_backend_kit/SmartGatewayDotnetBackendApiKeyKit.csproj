@@ -122,7 +122,6 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\FileController.cs" />
     <Compile Include="Controllers\HandlePaymentResponseController.cs" />
-    <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\InitiatePaymentController.cs" />
     <Compile Include="Controllers\InitiateRefundController.cs" />
     <Compile Include="Global.asax.cs">
