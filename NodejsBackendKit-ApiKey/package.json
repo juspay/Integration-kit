@@ -1,0 +1,25 @@
+{
+  "name": "nodejs-backendkit-apikey",
+  "version": "1.0.0",
+  "description": "Juspays expresscheckout backend kit using api-key",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "juspay",
+    "expresscheckout",
+    "nodejs",
+    "sdk"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  }
+}
