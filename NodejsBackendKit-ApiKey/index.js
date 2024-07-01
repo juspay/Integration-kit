@@ -14,7 +14,7 @@ app.get("/", (_, res) =>
   res.sendFile(path.join(__dirname, "public", "initiatePaymentDataForm.html"))
 );
 
-app.get("/initiatePayment", async (req, res) => {
+app.post("/initiatePayment", async (req, res) => {
   const orderId = `order_${Date.now()}`;
   const amount = (1 + Math.random() * 100) | 0;
   const returnUrl = `${req.protocol}://${req.hostname}:${port}/handlePaymentResponse`;
