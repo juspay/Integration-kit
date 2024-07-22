@@ -16,7 +16,7 @@ const Juspay_Block_Gateway = {
   },
   ariaLabel: juspayLabel,
   supports: {
-    features: settings.supports,
+    features: juspay_settings.supports,
   },
   placeOrderButtonLabel: "Proceed to Pay",
 };
