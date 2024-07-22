@@ -4,6 +4,7 @@ const {
   APIException,
   validateHMAC_SHA256,
 } = require("./PaymentHandler");
+const crypto = require("crypto");
 const path = require("path");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -16,7 +17,7 @@ app.get("/", (_, res) =>
 
 app.post("/initiatePayment", async (req, res) => {
   const orderId = `order_${Date.now()}`;
-  const amount = (1 + Math.random() * 100) | 0;
+  const amount = 1 + crypto.randomInt(100);
   const returnUrl = `${req.protocol}://${req.hostname}:${port}/handlePaymentResponse`;
   const paymentHandler = PaymentHandler.getInstance();
   try {
