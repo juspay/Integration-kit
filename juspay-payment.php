@@ -54,6 +54,11 @@ function juspay_init_payment_class() {
 			$this->init_form_fields();
 			$this->init_settings();
 
+			$this->supports = [ 
+				'products',
+				'refunds'
+			];
+
 			switch ( $this->get_option( 'mode' ) ) {
 				case "sandbox":
 					$this->base_url = "https://smartgatewayuat.hdfcbank.com";
@@ -456,6 +461,57 @@ function juspay_init_payment_class() {
 			}
 
 			return $links;
+		}
+
+		function process_refund( $orderId, $amount = NULL, $reason = '' ) {
+
+			$order = wc_get_order( $orderId );
+
+			$merchant_id = $this->paymentHandlerConfig->getMerchantId();
+			$apiUrl = $this->get_option( 'mode' ) == 'sandbox' ? 'https://smartgatewayuat.hdfcbank.com/orders' : 'https://smartgateway.hdfcbank.com/orders';
+			$apiKey = $this->paymentHandlerConfig->getApiKey();
+
+			$params = array();
+			$params['unique_request_id'] = mt_rand( 100, 999 );
+			$params['merchant_id'] = $merchant_id;
+			$params['order_id'] = $orderId;
+			$params['amount'] = $amount;
+			$params['api_url'] = $apiUrl . '/' . $orderId . '/refunds';
+			$params['api_key'] = $apiKey;
+
+			$curl = curl_init();
+
+			curl_setopt_array( $curl, [ 
+				CURLOPT_URL => $params['api_url'],
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_ENCODING => "",
+				CURLOPT_MAXREDIRS => 10,
+				CURLOPT_TIMEOUT => 0,
+				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+				CURLOPT_CUSTOMREQUEST => "POST",
+				CURLOPT_POSTFIELDS => "unique_request_id=" . $params['unique_request_id'] . "&order_id=" . $params['order_id'] . "&amount=" . $params['amount'],
+				CURLOPT_USERNAME => $params['api_key'],
+				CURLOPT_HTTPHEADER => [ 
+					"Accept: application/json",
+					"Content-Type: application/x-www-form-urlencoded",
+					"version: 2018-10-25",
+					"x-merchantid: " . $params['merchant_id'],
+				],
+			] );
+
+			$response = curl_exec( $curl );
+			$err = curl_error( $curl );
+
+			curl_close( $curl );
+
+			if ( $err ) {
+				$order->add_order_note( 'Error in creating Online Refund: ' . $err );
+				return false;
+			} else {
+				$order->add_order_note( 'Online Refund Initiated Successfully.' );
+				$order->add_order_note( 'Refund Response: ' . $response );
+				return true;
+			}
 		}
 	}
 
