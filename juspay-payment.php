@@ -4,7 +4,7 @@
 Plugin Name: SmartGateway
 Plugin URI: https://juspay.in/
 Description:  WooCommerce payment plugin for Juspay.in
-Version: 1.3.1
+Version: 1.3.3
 Updated: 11/03/2024
 Author: Juspay Technologies
 Author URI: https://juspay.in/
@@ -191,15 +191,27 @@ function juspay_init_payment_class() {
 		}
 
 		function receipt_page( $order_id ) {
-			echo $this->call_initiate_payment( $order_id );
+
+			$order = wc_get_order( $order_id );
+			$paymentMethod = $order->get_payment_method();
+
+			if ( $paymentMethod === 'juspay_payment' ) {
+				echo $this->call_initiate_payment( $order_id );
+			}
 		}
 
 		/**
 		 * Process the payment and return the result
 		 **/
 		function process_payment( $order_id ) {
-			$redirect_url = $this->call_initiate_payment( $order_id, true );
-			return array( 'result' => 'success', 'redirect' => $redirect_url );
+
+			$order = wc_get_order( $order_id );
+			$paymentMethod = $order->get_payment_method();
+
+			if ( $paymentMethod === 'juspay_payment' ) {
+				$redirect_url = $this->call_initiate_payment( $order_id, true );
+				return array( 'result' => 'success', 'redirect' => $redirect_url );
+			}
 		}
 
 		public function check_juspay_response() {
@@ -218,6 +230,8 @@ function juspay_init_payment_class() {
 			$status = $this->get_order_status( $params );
 
 			$order = new WC_Order( $order_id );
+
+			$order->add_order_note( 'Order Status: ' . $status );
 
 			try {
 				$msg['message'] = $this->get_status_message( array( 'status' => $status ) );
@@ -278,18 +292,24 @@ function juspay_init_payment_class() {
 		function juspay_thankyou( $esc_html__ ) {
 			$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
 			$order = wc_get_order( $order_id );
-			$paymentResponse = $this->paymentHandler->orderStatus( $order_id );
-			global $woocommerce;
 
-			if ( $paymentResponse['status'] == "CHARGED" || $paymentResponse['status'] == "COD_INITIATED" ) {
-				$order->payment_complete( $order_id );
-				$woocommerce->cart->empty_cart();
+			$paymentMethod = $order->get_payment_method();
+
+			if ( $paymentMethod === 'juspay_payment' ) {
+
+				$paymentResponse = $this->paymentHandler->orderStatus( $order_id );
+				global $woocommerce;
+
+				if ( $paymentResponse['status'] == "CHARGED" || $paymentResponse['status'] == "COD_INITIATED" ) {
+					$order->payment_complete( $order_id );
+					$woocommerce->cart->empty_cart();
+					return esc_html__( $esc_html__, 'juspay-payment' );
+				} else if ( $paymentResponse['status'] == "PENDING_VBV" ) {
+					$woocommerce->cart->empty_cart();
+				}
+				$esc_html__ = $this->get_status_message( $paymentResponse );
 				return esc_html__( $esc_html__, 'juspay-payment' );
-			} else if ( $paymentResponse['status'] == "PENDING_VBV" ) {
-				$woocommerce->cart->empty_cart();
 			}
-			$esc_html__ = $this->get_status_message( $paymentResponse );
-			return esc_html__( $esc_html__, 'juspay-payment' );
 		}
 
 		function juspay_add_manual_actions( $actions ) {
@@ -336,6 +356,9 @@ function juspay_init_payment_class() {
 					break;
 				case "AUTHENTICATION_FAILED":
 					$message = "Thank you for shopping with us. However, the transaction has been declined. Please retry the payment.";
+					break;
+				case "NEW":
+					$message = "Thank you for shopping with us. However, the transaction has been cancelled. Please retry the payment.";
 					break;
 				default:
 					$message = $message . $status;
