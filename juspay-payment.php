@@ -4,8 +4,8 @@
 Plugin Name: SmartGateway
 Plugin URI: https://juspay.in/
 Description:  WooCommerce payment plugin for Juspay.in
-Version: 1.3.3
-Updated: 11/03/2024
+Version: 1.3.5
+Updated: 23/08/2024
 Author: Juspay Technologies
 Author URI: https://juspay.in/
 License: GPLv2 or later
@@ -29,7 +29,7 @@ add_action( 'admin_post_nopriv_juspay_wc_webhook', 'juspay_webhook_init', 10 );
 add_action( 'before_woocommerce_init', 'juspay_declare_compatibility', 5 );
 add_action( 'woocommerce_blocks_loaded', 'juspay_woocommerce_blocks_support' );
 
-define( 'JUSPAY_PAYMENT_PLUGIN_VERSION', '1.3.1' );
+define( 'JUSPAY_PAYMENT_PLUGIN_VERSION', '1.3.5' );
 define( 'JUSPAY_PAYMENT_PLUGIN_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
 
 function juspay_init_payment_class() {
@@ -186,6 +186,11 @@ function juspay_init_payment_class() {
 					'title' => 'Response Key',
 					'type' => 'text',
 					'description' => 'You can find your Response Key from the settings section of Dashboard',
+				),
+				'custom_params' => array(
+					'title' => 'Custom Parameters',
+					'type' => 'textarea',
+					'description' => 'You can include additional parameters you want to pass in order payload as an array of key-value pairs e.g. { "gateway_reference_id" : "GRID" }',
 				),
 			);
 		}
@@ -425,6 +430,24 @@ function juspay_init_payment_class() {
 				$params['payment_page_client_id'] = $this->get_option( 'client_id' );
 				$params['action'] = "paymentPage";
 				$params['return_url'] = $this->notify_url;
+
+				$custom_params = $this->get_option( 'custom_params' );
+				// Decode the JSON string into an associative array
+				$custom_params_array = json_decode( $custom_params, true );
+
+				// Check if JSON decoding was successful and if it's an associative array
+				if ( is_array( $custom_params_array ) ) {
+					foreach ( $custom_params_array as $key => $value ) {
+						// Ensure each element is a proper key-value pair
+						if ( is_string( $key ) && ( is_string( $value ) || is_numeric( $value ) ) ) {
+							$params[ $key ] = $value;
+						} else {
+							$order->add_order_note( "Invalid key-value pair in custom_params: " . print_r( [ $key => $value ], true ) );
+						}
+					}
+				} else {
+					$order->add_order_note( "Error decoding custom_params JSON or it's not an array: " . $custom_params );
+				}
 
 				try {
 					$session = $this->paymentHandler->orderSession( $params );
