@@ -20,16 +20,8 @@ This initiates payment to payment server it calls /session api.
 ### handlePaymentResponse.php
 Payment flow ends here, with hmac verification and order status call. This is the return url specified in /session api call or can be configured through dasboard.
 
-
 ### initiateRefund.php
-It takes three params unique_request_id, order_id, amount and initiates refund to server, it calls /refunds api.
-
-### initiatePaymentDataForm.php
-This is an example of checkout page and demo page for /session api spec, please note that all the fields are kept readonly intentionally because we
-recommend you to construct these params at server side. Send product-id from frontend and make a lookup at server side for amount.
-
-### initiateRefundDataForm.html
-This is just an example of checkout page and demo page for /refunds api spec
+It takes order_id and initiates refund to server, it calls /refunds api.
 
 ### PaymentHandler class
 This is where all the business logic is for calling payments api exists
@@ -37,9 +29,9 @@ This is where all the business logic is for calling payments api exists
 <!-- block:start:run-server -->
 ### run
 ```bash
-php -S localhost:5000
+php -S localhost:5000 router.php
 ```
-Goto:- http://localhost:5000/initiatePaymentDataForm.php
+Goto:- http://localhost:5000
 <!-- block:end:run-server -->
 
 [:warning:]

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Form</title>
+</head>
+<style>
+    .container {
+        height: 80vh;
+        margin-left: auto;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .form {
+        margin: 0 auto;
+        margin-top: 3rem;
+        padding: 40px;
+        border: 1px solid black;
+        display: flex;
+        flex-direction: column;
+    }
+    #submitBtn {
+       align-self: center;
+    }
+
+    .button-1 {
+        border-style: none;
+        box-sizing: border-box;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 1rem;
+        font-weight: 500;
+        height: 40px;
+        line-height: 20px;
+        padding: 10px;
+        text-align: center;
+        vertical-align: baseline;
+    }
+
+    .heading {
+        display: flex;
+        justify-content: center;
+    }
+</style>
+<body>
+    <div class="heading">
+        <h2>Checkout Screen</h2>
+    </div>
+    <div class="container">
+        <div class="form">
+            <button id="submitBtn" class="button-1">Open Payment Page</button>
+        </div>
+    </div>
+    <script>
+        document.getElementById("submitBtn").addEventListener("click", function() {
+
+<!--block:start:open-paymentpage-->
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", 'initiateJuspayPayment', true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (xhr.status == 200) {
+                        if (response.status === 'NEW') {
+                            var url = response.payment_links.web;
+                            return window.location.href = url;
+                        }
+                    }
+                    alert(`http status code: ${xhr.status} message: ${response.message}`);
+                }
+            };
+<!--block:end:open-paymentpage-->
+            xhr.send(null);
+        });
+    </script>
+</body>
+</html>

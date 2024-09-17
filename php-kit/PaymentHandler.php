@@ -200,7 +200,7 @@ class PaymentEntity {
             $log["method"] = "POST";
             if ($params != null) {
                 $encodedParams = json_encode($params);
-                $log["request_params"] = $encodedParams;
+                $log["request_params"] = $params;
                 curl_setopt ( $curlObject, CURLOPT_POSTFIELDS, $encodedParams );
             }
         } else {
@@ -219,7 +219,7 @@ class PaymentEntity {
         $log["headers"] = $headers;
         $logger->setLoggerContext(array("api_tag" => $apiTag, "payment_request_id" => $paymentRequestId));
         $logger->info("Executing Request:".$url);
-        $logger->info("Request:".json_encode($log));
+        $logger->info(json_encode($log, JSON_UNESCAPED_SLASHES));
         curl_setopt ( $curlObject, CURLOPT_URL, $url );
         $ca = ini_get('curl.cainfo');
         $ca = $ca === null || $ca === "" ? ini_get('openssl.cafile') : $ca;
@@ -240,10 +240,10 @@ class PaymentEntity {
             $responseBody = json_decode ($encodedResponse, true );
             $responseHeaders = self::http_parse_headers(substr($response, 0, $headerSize));
             
-            $log = [ "http_status_code" => $responseCode,  "response" => $encodedResponse, "response_headers" => json_encode($responseHeaders)];
+            $log = [ "http_status_code" => $responseCode,  "response" => $responseBody, "response_headers" => json_encode($responseHeaders)];
             curl_close ( $curlObject );
             if ($responseCode >= 200 && $responseCode < 300) {
-                $logger->info("Received response:" . json_encode($log));
+                $logger->info(json_encode($log, JSON_UNESCAPED_SLASHES));
                 return $responseBody;
             } else {
                 $status = null;
