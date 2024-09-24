@@ -4,12 +4,23 @@ require_once realpath("./PaymentHandler.php");
 use PaymentHandler\PaymentHandler;
 // block:start:order-status-function
 function getOrder($params) {
-    $paymentHandler = new PaymentHandler("resources/config.json");
-    if ($paymentHandler->validateHMAC_SHA256($params) === false) {
-        throw new APIException(-1, false, "Signature verification failed", "Signature verification failed");
-    } else {
-        $order = $paymentHandler->orderStatus($params["order_id"]);
-        return $order;
+   try {
+        $paymentHandler = new PaymentHandler("resources/config.json");
+        if ($paymentHandler->validateHMAC_SHA256($params) === false) {
+            throw new APIException(-1, false, "Signature verification failed", "Signature verification failed");
+        } else {
+            $order = $paymentHandler->orderStatus($params["order_id"]);
+            return $order;
+        }
+   } catch (APIException $e ) {
+        http_response_code(500);
+        $error = json_encode(["message" => $e->getErrorMessage(), "error_code" => $e->getErrorCode(), "http_response_code" => $e->getHttpResponseCode()]);
+        echo "<p> Payment server threw a non-2xx error. Error message: {$error} </p>";
+        exit;
+     } catch (Exception $e) {
+        http_response_code(500);
+        echo "<p> Unexpected error occurred, Error message:  {$e->getMessage()} </p>";
+        exit;
     }
 
 }
@@ -42,33 +53,12 @@ function getStatusMessage($order) {
  // POST ROUTE
  // block:start:construct-params
  if (isset($_POST["order_id"])) {
-     try {
-        $inputParams = $_POST;
-        $orderId = $_POST["order_id"];
-        $status = $_POST["status"];
-        $signature = $_POST["signature"];
-        $statusId = $_POST["status_id"];
-        $params = ["order_id" => $orderId, "status" => $status, "signature" => $signature, "status_id" => $statusId];
+        $params = $_POST;
 // block:end:construct-params
         $order = getOrder($params);
         $message = getStatusMessage($order);
-     } catch (APIException $e ) {
-        http_response_code(500);
-        $error = json_encode(["message" => $e->getErrorMessage(), "error_code" => $e->getErrorCode(), "http_response_code" => $e->getHttpResponseCode()]);
-        echo "<p> Payment server threw a non-2xx error. Error message: {$error} </p>";
-        exit;
-     } catch (Exception $e) {
-        http_response_code(500);
-        echo "<p> Unexpected error occurred, Error message:  {$e->getMessage()} </p>";
-        exit;
-    }
  } else if (isset($_GET["order_id"])) { // GET ROUTE
-    $inputParams = $_GET;
-    $orderId = $_GET["order_id"];
-    $status = $_GET["status"];
-    $signature = $_GET["signature"];
-    $statusId = $_GET["status_id"];
-    $params = ["order_id" => $orderId, "status" => $status, "signature" => $signature, "status_id" => $statusId];
+    $params = $_GET;
     $order = getOrder($params);
     $message = getStatusMessage($order);
  } else {
@@ -88,7 +78,7 @@ function getStatusMessage($order) {
         <font size="4" color="blue"><b>Return url request body params</b></font>
         <table border="1">
             <?php
-                foreach ($inputParams as $key => $value) {
+                foreach ($params as $key => $value) {
                     echo "<tr><td>{$key}</td>";
                     $pvalue = "";
                     if ($value !== null) {
