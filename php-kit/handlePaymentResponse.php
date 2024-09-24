@@ -32,21 +32,11 @@ function getOrder($params) {
  // POST ROUTE
  // block:start:construct-params
  if (isset($_POST["order_id"])) {
-        $inputParams = $_POST;
-        $orderId = $_POST["order_id"];
-        $status = $_POST["status"];
-        $signature = $_POST["signature"];
-        $statusId = $_POST["status_id"];
-        $params = ["order_id" => $orderId, "status" => $status, "signature" => $signature, "status_id" => $statusId];
+        $params = $_POST;
 // block:end:construct-params
         getOrder($params);
  } else if (isset($_GET["order_id"])) { // GET ROUTE
-        $inputParams = $_GET;
-        $orderId = $_GET["order_id"];
-        $status = $_GET["status"];
-        $signature = $_GET["signature"];
-        $statusId = $_GET["status_id"];
-        $params = ["order_id" => $orderId, "status" => $status, "signature" => $signature, "status_id" => $statusId];
+        $params = $_GET;
         getOrder($params);
     
  } else {
