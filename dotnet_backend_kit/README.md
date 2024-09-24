@@ -1,5 +1,5 @@
 # Sample Kit Using Web Servlets
-This is a sample java kit using web-servlets.
+This is a sample dotnet backend kit.
 
 ## Setup
 Place config.json file inside dotnet_backend_kit folder, ensure fields like API_KEY, MERCHANT_ID, PAYMENT_PAGE_CLIENT_ID & BASE_URL are populated.
