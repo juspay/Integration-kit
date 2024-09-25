@@ -5,7 +5,7 @@ use PaymentHandler\PaymentHandler;
 // block:start:order-status-function
 function getOrder($params) {
     $paymentHandler = new PaymentHandler("resources/config.json");
-    if ($paymentHandler->validateHMAC_SHA256($params) === false) {
+    if ($params["status"] != "NEW" && $paymentHandler->validateHMAC_SHA256($params) === false) {
         throw new APIException(-1, false, "Signature verification failed", "Signature verification failed");
     } else {
         try {
