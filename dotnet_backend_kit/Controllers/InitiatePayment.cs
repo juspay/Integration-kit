@@ -21,6 +21,7 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
         [HttpPost]
         public async Task<IActionResult> Index()
         {
+            // block:start:session-function
             string orderId = $"order_{new Random().Next()}";
             int amount = new Random().Next(0, 100);
             string customerId = "testing-customer-one";
@@ -35,6 +36,7 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
                             { "return_url", "http://localhost:5000/handlePaymentResponse" }
                     };
             var orderSession = await paymentHandler.OrderSession(sessionInput);
+            // block:end:session-function
             if (orderSession?.payment_links?.web != null) return Redirect((string)orderSession.payment_links.web);
             throw new Exception("Invalid Response unable to find web payment link");
         }

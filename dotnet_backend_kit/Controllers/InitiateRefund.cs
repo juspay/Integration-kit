@@ -22,8 +22,10 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
         [HttpPost]
         public async Task<IActionResult> Index()
         {
+            // block:start:refund-function
             PaymentHandler paymentHandler = new PaymentHandler();
             var refund = await paymentHandler.Refund(new Dictionary<string, object> { { "order_id", HttpContext.Request.Form["order_id"] }, { "unique_request_id", HttpContext.Request.Form["unique_request_id"] }, { "amount", HttpContext.Request.Form["amount"] } });
+            // block:end:refund-function
             return View("Index", new RefundStatusViewModel { Refund = Utils.FlattenJson(refund), StringifiedRefund = Utils.StrigifyJson(refund) });
             
         }
