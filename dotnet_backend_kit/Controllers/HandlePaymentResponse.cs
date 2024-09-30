@@ -19,16 +19,18 @@ namespace SmartGatewayDotnetBackendApiKeyKit.Controllers {
         {
             _logger = logger;
         }
-
+        // block:start:construct-params
         public bool ValidateHMAC(Dictionary<string, string> input) {
             return Utility.ValidateHMAC_SHA256(input, PaymentHandlerConfig.Instance.RESPONSE_KEY);
         }
+        // block:end:construct-params
 
+        // block:start:order-status-function
         public Task<dynamic> GetOrder(string orderId) {
             PaymentHandler paymentHandler = new PaymentHandler();
             return paymentHandler.OrderStatus(orderId);
         }
-
+        // block:end:order-status-function
         public async Task<IActionResult> HandleJuspayResponse() {
             string orderId = HttpContext.Request.Form["order_id"];
             string status = HttpContext.Request.Form["status"];
