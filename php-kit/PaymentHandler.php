@@ -156,6 +156,21 @@ class PaymentEntity {
         
         return $headers;
     }
+
+    private static function camelizeArrayKeysRecursive(array $array)
+    {
+        $camelizedArray = [];
+    
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $value = self::camelizeArrayKeysRecursive($value);
+            }
+            $camelizedKey = lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $key))));
+            $camelizedArray[$camelizedKey] = $value;
+        }
+    
+        return $camelizedArray;
+    }
     
     /**
      *
@@ -237,7 +252,7 @@ class PaymentEntity {
             $responseCode = curl_getinfo ( $curlObject, CURLINFO_HTTP_CODE );
             $headerSize = curl_getinfo ( $curlObject, CURLINFO_HEADER_SIZE );
             $encodedResponse = substr ( $response, $headerSize );
-            $responseBody = json_decode ($encodedResponse, true );
+            $responseBody = self::camelizeArrayKeysRecursive(json_decode ($encodedResponse, true ));
             $responseHeaders = self::http_parse_headers(substr($response, 0, $headerSize));
             
             $log = [ "http_status_code" => $responseCode,  "response" => $responseBody, "response_headers" => json_encode($responseHeaders)];
