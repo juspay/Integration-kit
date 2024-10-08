@@ -58,7 +58,7 @@ mvn jetty:run
 Goto:- http://localhost:8080/initiatePayment.jsp
 <!-- block:end:run-server -->
 ### Test card credentials
-card_number:- 4012001037141112
+card_number:- 4012000000001097
 
 cvv:- 123
 
