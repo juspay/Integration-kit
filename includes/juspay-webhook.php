@@ -22,7 +22,7 @@ class Juspay_Webhook {
 
 	public function process() {
 		$post = file_get_contents( 'php://input' );
-		if ( ! empty ( $post ) ) {
+		if ( ! empty( $post ) ) {
 			$data = json_decode( $post, true );
 			$headers = getallheaders();
 			$authorization = $headers['authorization'];
@@ -30,7 +30,7 @@ class Juspay_Webhook {
 			$enabled = $this->juspay->get_option( 'enable_webhook' );
 
 			// Skip the webhook if not the valid data and event
-			if ( ( $enabled === 'yes' ) and ( empty ( $data['event_name'] ) === false ) ) {
+			if ( ( $enabled === 'yes' ) and ( empty( $data['event_name'] ) === false ) ) {
 				// Skip the webhook if the authorization credentials are not valid
 				if ( $this->shouldConsumeWebhook( $authorization ) === false ) {
 					return;
@@ -66,6 +66,7 @@ class Juspay_Webhook {
 
 		if ( $order ) {
 			if ( $order->status == 'pending' ) {
+				$order->update_status( 'processing' );
 				$order->payment_complete( $order_id );
 				$order->add_order_note( "Payment successful (via Webhook) - Order Id: " . $order_id );
 			}
@@ -85,6 +86,7 @@ class Juspay_Webhook {
 		$order = wc_get_order( $order_id );
 
 		if ( $order ) {
+			$order->update_status( 'failed' );
 			$order->add_order_note( "Payment failed (via Webhook) - Order Id: " . $order_id );
 			$paymentMethod = $data['content']['order']['payment_method'];
 			$paymentMethodType = $data['content']['order']['payment_method_type'];
