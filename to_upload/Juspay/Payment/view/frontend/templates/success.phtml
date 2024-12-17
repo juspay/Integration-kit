@@ -1,0 +1,23 @@
+<?php
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+
+?>
+<?php /** @var $block \Magento\Checkout\Block\Onepage\Success */ ?>
+<div class="checkout-success">
+	<?php if ( $block->getOrderId() ) : ?>
+		<p><?= $block->escapeHtml( __( 'Your order number is: #<span>%1</span>.', $block->getOrderId() ), [ 'span' ] ) ?>
+		</p>
+		<p><?= $block->escapeHtml( __( 'You can check the order details below. Guest customers need to create the account first.' ), [ 'a', 'strong' ] ) ?>
+		</p>
+		<div class="actions-toolbar">
+			<div class="primary">
+				<a class="action primary continue" href="<?= $block->escapeUrl( $block->getViewOrderUrl() ) ?>">
+					<span><?= $block->escapeHtml( __( 'Order Details' ) ) ?></span>
+				</a>
+			</div>
+		</div>
+	<?php endif; ?>
+</div>

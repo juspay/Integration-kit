@@ -1,0 +1,92 @@
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="payment">
+            <group id="juspay" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label><![CDATA[Juspay&nbsp;&nbsp;<i>Accept and process multiple payments.</i>]]></label>
+                <field id="active" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <config_path>payment/juspay/active</config_path>
+                </field>
+                <field id="title" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Title</label>
+                    <config_path>payment/juspay/title</config_path>
+                    <comment>
+                        <![CDATA[This controls the title which the user sees during checkout. ]]>
+                    </comment>
+                </field>
+                <field id="merchant_id" translate="label" type="text" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Merchant ID</label>
+<!--                    <config_path>payment/juspay/merchant_id</config_path>-->
+                    <comment>
+                        <![CDATA[Provided to by the bank team. ]]>
+                    </comment>
+                </field>
+                <field id="client_id" translate="label" type="text" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Client ID</label>
+<!--                    <config_path>payment/juspay/client_id</config_path>-->
+                    <comment>
+                        <![CDATA[For Sandbox use 'hdfcmaster' as your client_id and for Production use merchant id as client id. ]]>
+                    </comment>
+                </field>
+                <field id="response_secret" translate="label" type="text" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Response Key</label>
+<!--                    <config_path>payment/juspay/response_secret</config_path>-->
+                    <comment>
+                        <![CDATA[Settings section of SmartGateway dashboard. (Merchant to download config.json ) ]]>
+                    </comment>
+                </field>
+                <field id="api_key" translate="label" type="text" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>API Key</label>
+                    <comment>
+                        <![CDATA[Settings section of SmartGateway dashboard. (Merchant to download config.json ) ]]>
+                    </comment>
+                </field>
+                <field id="mode" translate="label" type="select" sortOrder="9" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Mode</label>
+                    <comment>
+                        <![CDATA[In UAT Sandbox. ]]>
+                    </comment>
+                    <source_model>Juspay\Payment\Model\Config\Source\Mode</source_model>
+                    <config_path>payment/juspay/mode</config_path>
+                </field>
+                <field id="webhook" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Enable Webhook</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <config_path>payment/juspay/webhook</config_path>
+                    <comment>
+                        <![CDATA[Callback will provide direct notification to your server regarding events, like: Order Succeeded, Transaction Charged. ]]>
+                    </comment>
+                </field>
+                <field id="webhook_username" translate="label" type="text" sortOrder="11" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Webhook Username</label>
+                    <comment>
+                        <![CDATA[Settings section of SmartGateway dashboard. ]]>
+                    </comment>
+                </field>
+                <field id="webhook_password" translate="label" type="password" sortOrder="12" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Webhook Password</label>
+                    <comment>
+                        <![CDATA[Settings section of SmartGateway dashboard. ]]>
+                    </comment>
+                </field>
+                <field id="custom_params" translate="label" type="textarea" sortOrder="13" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Custom Params</label>
+                    <config_path>payment/juspay/custom_params</config_path>
+                    <comment>
+                        <![CDATA[You can include additional parameters you want to pass in order payload as an array of key-value pairs e.g. { "gateway_reference_id" : "GRID" } ]]>
+                    </comment>
+                </field>
+                <field id="allowspecific" translate="label" type="allowspecific" sortOrder="50" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Payment from Applicable Countries</label>
+                    <source_model>Magento\Payment\Model\Config\Source\Allspecificcountries</source_model>
+                </field>
+                <field id="specificcountry" translate="label" type="multiselect" sortOrder="51" showInDefault="1" showInWebsite="1">
+                    <label>Payment from Specific Countries</label>
+                    <source_model>Magento\Directory\Model\Config\Source\Country</source_model>
+                    <can_be_empty>1</can_be_empty>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
