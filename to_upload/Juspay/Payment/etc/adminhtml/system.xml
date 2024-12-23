@@ -2,7 +2,7 @@
     <system>
         <section id="payment">
             <group id="juspay" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label><![CDATA[Juspay&nbsp;&nbsp;<i>Accept and process multiple payments.</i>]]></label>
+                <label><![CDATA[SmartGateway&nbsp;&nbsp;<i>Accept and process multiple payments.</i>]]></label>
                 <field id="active" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enabled</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
