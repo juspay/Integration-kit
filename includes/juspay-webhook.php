@@ -65,7 +65,7 @@ class Juspay_Webhook {
 		$order = wc_get_order( $order_id );
 
 		if ( $order ) {
-			if ( $order->status == 'pending' ) {
+			if ( $order->get_status() == 'pending' ) {
 				$order->update_status( 'processing' );
 				$order->payment_complete( $order_id );
 				$order->add_order_note( "Payment successful (via Webhook) - Order Id: " . $order_id );
