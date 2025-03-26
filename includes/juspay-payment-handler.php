@@ -14,112 +14,188 @@ class PaymentHandler {
 	}
 
 	/**
-	 * @param array $params
+	 * Fetches the status of an order by order ID.
+	 *
+	 * @param string $orderId
 	 * @return array
 	 */
-	public function orderStatus( $orderId ) {
-		return PaymentEntity::makeServiceCall( "/orders/{$orderId}", null, RequestMethod::GET, null, $orderId );
+	public function orderStatus( string $orderId ): array {
+		return PaymentEntity::makeServiceCall(
+			"/orders/{$orderId}",
+			null,
+			RequestMethod::GET,
+			null,
+			$orderId
+		);
 	}
 
 	/**
+	 * Creates a session for an order.
+	 *
 	 * @param array $params
 	 * @return array
+	 * @throws APIException If parameters are invalid.
 	 */
 	public function orderSession( $params ) {
 		$this->paramsCheck( $params );
 		if ( ! array_key_exists( "payment_page_client_id", $params ) ) {
 			$params["payment_page_client_id"] = $this->paymentHandlerConfig->getPaymentPageClientId();
 		}
-		return PaymentEntity::makeServiceCall( "/session", $params, RequestMethod::POST, ContentType::JSON, $params['order_id'] );
-
+		return PaymentEntity::makeServiceCall(
+			"/session",
+			$params,
+			RequestMethod::POST,
+			ContentType::JSON,
+			$params['order_id']
+		);
 	}
 
 	/**
+	 * Processes a refund for an order.
+	 *
 	 * @param array $params
 	 * @return array
+	 * @throws APIException If parameters are invalid.
 	 */
-	public function refund( $params ) {
+	public function refund( array $params ): array {
 		$this->paramsCheck( $params );
-		return PaymentEntity::makeServiceCall( "/refunds", $params, RequestMethod::POST, ContentType::X_WWW_FORM_URLENCODED, $params['order_id'] );
+		return PaymentEntity::makeServiceCall(
+			"/refunds",
+			$params,
+			RequestMethod::POST,
+			ContentType::X_WWW_FORM_URLENCODED,
+			$params['order_id']
+		);
 	}
 
-	public function validateHMAC_SHA256( $params, $secret = null ) {
+	/**
+	 * Validates the HMAC-SHA256 signature.
+	 *
+	 * @param array $params
+	 * @param string|null $secret
+	 * @return bool
+	 */
+	public function validateHMAC_SHA256( array $params, ?string $secret = null ): bool {
 		try {
-			if ( $secret === null ) {
-				$secret = $this->paymentHandlerConfig->getResponseKey();
-			}
-			if ( $secret == null )
+			$secret = $secret ?? $this->paymentHandlerConfig->getResponseKey();
+			if ( empty( $secret ) ) {
 				return false;
+			}
+
+			if ( ! isset( $params['order_id'] ) ) {
+				throw new InvalidArgumentException( 'Order ID is missing in parameters.' );
+			}
+
 			$order = wc_get_order( $params['order_id'] );
+			if ( ! $order ) {
+				throw new Exception( 'Order not found.' );
+			}
+
 			$paramsList = [];
 			$paramsString = "";
 			$expectedHash = null;
+
 			foreach ( $params as $key => $value ) {
-				if ( $key != "signature" && $key != 'signature_algorithm' ) {
-					$paramsList[ $key ] = $value;
-				} else if ( $key == "signature" ) {
+				if ( $key === 'signature' ) {
 					$expectedHash = urldecode( $value );
+				} elseif ( $key !== 'signature_algorithm' ) {
+					$paramsList[ $key ] = $value;
 				}
 			}
+
 			ksort( $paramsList );
 			foreach ( $paramsList as $key => $value ) {
 				$paramsString = $paramsString . $key . "=" . $value . "&";
 			}
 			$paramsString = urlencode( substr( $paramsString, 0, strlen( $paramsString ) - 1 ) );
-			$hash = base64_encode( hash_hmac( "sha256", $paramsString, $secret, true ) );
-			if ( urldecode( $hash ) == $expectedHash )
+			$hash = base64_encode( hash_hmac( 'sha256', $paramsString, $secret, true ) );
+
+			if ( urldecode( $hash ) === $expectedHash ) {
 				return true;
-			else {
-				$order->add_order_note( json_encode( [ "computeHash" => urldecode( $hash ), "expectedHash" => $expectedHash ] ) );
-				return false;
 			}
+
+			$order->add_order_note( json_encode( [ 
+				'computedHash' => urldecode( $hash ),
+				'expectedHash' => $expectedHash,
+			] ) );
+			return false;
+
 		} catch (Exception $e) {
-			$order->add_order_note( 'Error: ', $e->getMessage() );
+			if ( isset( $order ) && $order instanceof WC_Order ) {
+				$order->add_order_note( 'Error: ' . $e->getMessage() );
+			}
+			return false;
 		}
 	}
 
-	private function paramsCheck( $params ) {
-		if ( $params == null || count( $params ) == 0 ) {
+	/**
+	 * Validates input parameters.
+	 *
+	 * @param array|null $params
+	 * @throws APIException If parameters are invalid.
+	 */
+	private function paramsCheck( ?array $params ): void {
+		if ( empty( $params ) ) {
 			throw new APIException( -1, "INVALID_PARAMS", "INVALID_PARAMS", "Params is empty" );
 		}
 	}
-
-
 }
 
 class PaymentEntity {
 
 	/**
+	 * Makes a service call.
 	 *
 	 * @param string $path
 	 * @param array|null $params
 	 * @param string $method
-	 * @param string $contentType
+	 * @param string|null $contentType
+	 * @param int $orderId
 	 * @return array
 	 *
 	 * @throws APIException
 	 */
 	public static function makeServiceCall( $path, $params, $method, $contentType = null, $orderId ) {
+		// Validate inputs
+		if ( empty( $path ) ) {
+			throw new InvalidArgumentException( 'Path cannot be empty.' );
+		}
+
+		if ( ! in_array( $method, [ RequestMethod::GET, RequestMethod::POST ] ) ) {
+			throw new InvalidArgumentException( 'Invalid HTTP method.' );
+		}
+
 		$order = wc_get_order( $orderId );
+		if ( ! $order ) {
+			throw new APIException( -1, "invalid_order", "invalid_order", "Order not found with ID: $orderId" );
+		}
+
 		$paymentHandlerConfig = PaymentHandlerConfig::getInstance();
 		$url = $paymentHandlerConfig->getBaseUrl() . $path;
+
+		// Initialize cURL
 		$curlObject = curl_init();
 		$log = array();
+		if ( ! $curlObject ) {
+			throw new APIException( -1, "curl_init_failed", "curl_init_failed", "Unable to initialize cURL." );
+		}
+
 		curl_setopt( $curlObject, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $curlObject, CURLOPT_HEADER, true );
 		curl_setopt( $curlObject, CURLOPT_NOBODY, false );
 		curl_setopt( $curlObject, CURLOPT_USERPWD, $paymentHandlerConfig->getApiKey() );
 		curl_setopt( $curlObject, CURLOPT_HTTPAUTH, CURLAUTH_BASIC );
 		curl_setopt( $curlObject, CURLOPT_USERAGENT, "SAMPLE_KIT/" . $paymentHandlerConfig->getMerchantId() );
+		// Prepare headers
 		$headers = array( 'version: ' . $paymentHandlerConfig->getAPIVersion() );
 		if ( $paymentHandlerConfig->getMerchantId() )
 			array_push( $headers, 'x-merchantid:' . $paymentHandlerConfig->getMerchantId() );
 
-		if ( $method == RequestMethod::GET ) {
-			curl_setopt( $curlObject, CURLOPT_HTTPHEADER, $headers );
+		// Handle HTTP method and content type
+		if ( $method === RequestMethod::GET ) {
 			curl_setopt( $curlObject, CURLOPT_HTTPGET, 1 );
 			$log["method"] = "GET";
-			if ( $params != null ) {
+			if ( ! empty( $params ) ) {
 				$encodedParams = http_build_query( $params );
 				if ( $encodedParams != null && $encodedParams != "" ) {
 					$url = $url . "?" . $encodedParams;
@@ -152,6 +228,7 @@ class PaymentEntity {
 		$order->add_order_note( json_encode( $log ) );
 
 		curl_setopt( $curlObject, CURLOPT_URL, $url );
+		// Handle CA certificates
 		$ca = ini_get( 'curl.cainfo' );
 		$ca = $ca === null || $ca === "" ? ini_get( 'openssl.cafile' ) : $ca;
 		if ( $ca === null || $ca === "" ) {
@@ -160,141 +237,134 @@ class PaymentEntity {
 			$caCertificatePath = PaymentHandlerConfig::getInstance()->getCacert();
 			curl_setopt( $curlObject, CURLOPT_CAINFO, $caCertificatePath );
 		}
+		// Execute cURL
 		$response = curl_exec( $curlObject );
 		if ( $response == false ) {
 			$curlError = curl_error( $curlObject );
-			$order->add_order_note( 'connection error:' . $curlError );
+			$order->add_order_note( 'Connection error: ' . $curlError );
 			throw new APIException( -1, "connection_error", "connection_error", $curlError );
 		} else {
 			$log = array();
+			// Parse response
 			$responseCode = curl_getinfo( $curlObject, CURLINFO_HTTP_CODE );
 			$headerSize = curl_getinfo( $curlObject, CURLINFO_HEADER_SIZE );
 			$encodedResponse = substr( $response, $headerSize );
 			$responseBody = json_decode( $encodedResponse, true );
 			$responseHeaders = substr( $response, 0, $headerSize );
-			$log = [ "status_code" => $responseCode, "response" => $encodedResponse, "response_headers" => $responseHeaders ];
+
+			$log = [ 
+				'status_code' => $responseCode,
+				'response' => $encodedResponse,
+				'response_headers' => $responseHeaders
+			];
+			$order->add_order_note( json_encode( $log ) );
+
 			curl_close( $curlObject );
+
+			// Handle response codes
 			if ( $responseCode >= 200 && $responseCode < 300 ) {
 				$order->add_order_note( json_encode( $log ) );
 				return $responseBody;
-			} else {
-				$status = null;
-				$errorCode = null;
-				$errorMessage = null;
-				if ( $responseBody != null ) {
-					if ( array_key_exists( "status", $responseBody ) != null ) {
-						$status = $responseBody['status'];
-					}
-					if ( array_key_exists( "error_code", $responseBody ) != null ) {
-						$errorCode = $responseBody['error_code'];
-					}
-					if ( array_key_exists( "error_message", $responseBody ) != null ) {
-						$errorMessage = $responseBody['error_message'];
-					} else {
-						$errorMessage = $status;
-					}
-				}
-				$order->add_order_note( json_encode( $log ) );
-				throw new APIException( $responseCode, $status, $errorCode, $errorMessage );
 			}
+			// Extract error details
+			$status = $responseBody['status'] ?? null;
+			$errorCode = $responseBody['error_code'] ?? null;
+			$errorMessage = $responseBody['error_message'] ?? $status ?? 'Unknown error';
+			throw new APIException( $responseCode, $status, $errorCode, $errorMessage );
 		}
 	}
-
 }
+
 class APIException extends Exception {
-	private $httpResponseCode;
-	private $status;
-	private $errorCode;
-	private $errorMessage;
-	public function __construct( $httpResponseCode, $status, $errorCode, $errorMessage ) {
-		parent::__construct( $errorMessage == null ? "Something went wrong" : $errorMessage );
+	private int $httpResponseCode;
+	private ?string $status;
+	private ?string $errorCode;
+	private ?string $errorMessage;
+
+	/**
+	 * APIException constructor.
+	 *
+	 * @param int $httpResponseCode
+	 * @param string|null $status
+	 * @param string|null $errorCode
+	 * @param string|null $errorMessage
+	 */
+	public function __construct( int $httpResponseCode, ?string $status = null, ?string $errorCode = null, ?string $errorMessage = null ) {
+		$message = $errorMessage ?? "Something went wrong";
+		parent::__construct( $message );
+
 		$this->httpResponseCode = $httpResponseCode;
 		$this->status = $status;
 		$this->errorCode = $errorCode;
 		$this->errorMessage = $errorMessage;
 	}
-	public function getHttpResponseCode() {
+
+	/**
+	 * Get the HTTP response code.
+	 *
+	 * @return int
+	 */
+	public function getHttpResponseCode(): int {
 		return $this->httpResponseCode;
 	}
-	public function getStatus() {
+
+	/**
+	 * Get the status.
+	 *
+	 * @return string|null
+	 */
+	public function getStatus(): ?string {
 		return $this->status;
 	}
-	public function getErrorCode() {
+
+	/**
+	 * Get the error code.
+	 *
+	 * @return string|null
+	 */
+	public function getErrorCode(): ?string {
 		return $this->errorCode;
 	}
-	public function getErrorMessage() {
+
+	/**
+	 * Get the error message.
+	 *
+	 * @return string|null
+	 */
+	public function getErrorMessage(): ?string {
 		return $this->errorMessage;
 	}
 }
 
 class PaymentHandlerConfig {
+	private static ?PaymentHandlerConfig $instance = null;
+
+	private string $apiKey;
+	private string $merchantId;
+	private string $paymentPageClientId;
+	private string $baseUrl;
+	private string $responseKey;
+	private string $API_VERSION = "2024-02-01";
+	private ?string $cacert = null;
+
 	/**
-	 * @property PaymentHandlerConfig $instance
+	 * Private constructor to prevent direct instantiation.
 	 */
-	private static $instance;
 	private function __construct() {
 	}
 
-	public function __destruct() {
-	}
 	/**
-	 * @property string $apiKey
+	 * Prevent cloning.
 	 */
-	private $apiKey;
-
-	/**
-	 * @property string $merchantId
-	 */
-	private $merchantId;
-
-
-	/**
-	 * @property string $paymentPageClientId
-	 */
-	private $paymentPageClientId;
-
-	/**
-	 * @property string $baseUrl
-	 */
-	private $baseUrl;
-
-	/**
-	 * @property string $responseKey
-	 */
-
-	private $responseKey;
-
-	/**
-	 * @property string $API_VERSION
-	 */
-	private $API_VERSION = "2024-02-01";
-
-	/**
-	 * @property string $cacert
-	 */
-	private $cacert;
-
-	/**
-	 * @param string $merchantId
-	 * @param string $apiKey
-	 * @param string $paymentPageClientId
-	 * @param string $baseUrl
-	 * @param string $responseKey
-	 * @return PaymentHandlerConfig
-	 */
-	public function withInstance( $merchantId, $apiKey, $paymentPageClientId, $baseUrl, $responseKey ) {
-		$this->apiKey = $apiKey;
-		$this->merchantId = $merchantId;
-		$this->paymentPageClientId = $paymentPageClientId;
-		$this->baseUrl = $baseUrl;
-		$this->responseKey = $responseKey;
-		return $this;
+	private function __clone() {
 	}
 
 	/**
+	 * Returns the singleton instance of PaymentHandlerConfig.
+	 *
 	 * @return PaymentHandlerConfig
 	 */
-	public static function getInstance() {
+	public static function getInstance(): PaymentHandlerConfig {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
@@ -302,67 +372,79 @@ class PaymentHandlerConfig {
 	}
 
 	/**
-	 * @return string
+	 * Sets configuration values and returns the updated instance.
+	 *
+	 * @param string $merchantId
+	 * @param string $apiKey
+	 * @param string $paymentPageClientId
+	 * @param string $baseUrl
+	 * @param string $responseKey
+	 * @return PaymentHandlerConfig
 	 */
-	public function getApiKey() {
-		return $this->apiKey;
+	public function withInstance(
+		string $merchantId,
+		string $apiKey,
+		string $paymentPageClientId,
+		string $baseUrl,
+		string $responseKey
+	): PaymentHandlerConfig {
+		$this->merchantId = $merchantId;
+		$this->apiKey = $apiKey;
+		$this->paymentPageClientId = $paymentPageClientId;
+		$this->baseUrl = $baseUrl;
+		$this->responseKey = $responseKey;
+		return $this;
 	}
 
 	/**
-	 * @return string
-	 */
-	public function getMerchantId() {
-		return $this->merchantId;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getPaymentPageClientId() {
-		return $this->paymentPageClientId;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getBaseUrl() {
-		return $this->baseUrl;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getResponseKey() {
-		return $this->responseKey;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getAPIVersion() {
-		return $this->API_VERSION;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getCacert() {
-		return $this->cacert;
-	}
-
-
-	/**
+	 * Sets the API version.
+	 *
 	 * @param string $apiVersion
+	 * @return void
 	 */
-	public function withAPIVersion( $apiVersion ) {
+	public function withAPIVersion( string $apiVersion ): void {
 		$this->API_VERSION = $apiVersion;
 	}
 
 	/**
+	 * Sets the CA certificate path.
+	 *
 	 * @param string $cacertPath
+	 * @return void
 	 */
-	public function withCacert( $cacertPath ) {
+	public function withCacert( string $cacertPath ): void {
 		$this->cacert = realpath( $cacertPath );
+	}
+
+	/**
+	 * Getters for various properties.
+	 */
+	public function getApiKey(): string {
+		return $this->apiKey;
+	}
+
+	public function getMerchantId(): string {
+		return $this->merchantId;
+	}
+
+	public function getPaymentPageClientId(): string {
+		return $this->paymentPageClientId;
+	}
+
+	public function getBaseUrl(): string {
+		return $this->baseUrl;
+	}
+
+	public function getResponseKey(): string {
+		return $this->responseKey;
+	}
+
+	public function getAPIVersion(): string {
+		return $this->API_VERSION;
+	}
+
+	public function getCacert(): ?string {
+		return $this->cacert;
 	}
 }
 

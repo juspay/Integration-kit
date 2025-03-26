@@ -247,7 +247,7 @@ function juspay_init_payment_class() {
 					$msg['class'] = 'error';
 				}
 
-				if ( $order->status != 'processing' ) {
+				if ( $order->get_status() != 'processing' ) {
 					if ( $status == "CHARGED" || $status == "COD_INITIATED" ) {
 						$order->payment_complete( $order_id );
 						$order->add_order_note( 'Payment successful - Order ID: ' . $order_id );
@@ -339,8 +339,9 @@ function juspay_init_payment_class() {
 			global $theorder;
 			$this->method_title = __( 'Smart Gateway' );
 			$order_id = $theorder->get_transaction_id();
+			$order_status = $theorder->get_status();
 			$terminal_status = array( "processing", "refunded" );
-			if ( ! ( in_array( $theorder->status, $terminal_status ) || strlen( $order_id ) < 3 ) ) {
+			if ( ! ( in_array( $order_status, $terminal_status ) || strlen( $order_id ) < 3 ) ) {
 				$actions['wc_manual_sync_action'] = __( 'Sync Payment', 'juspay-payment' );
 			}
 			return $actions;
@@ -351,7 +352,7 @@ function juspay_init_payment_class() {
 			$response = $this->paymentHandler->orderStatus( $order_id );
 			$order->add_order_note( 'Synced Payment Status : ' . $response['status'] . ' - Order ID: ' . $order_id );
 			if ( $response['status'] == 'CHARGED' || $response['status'] == 'COD_INITIATED' ) {
-				if ( $order->status != 'processing' ) {
+				if ( $order->get_status() != 'processing' ) {
 					$order->payment_complete( $order_id );
 					$order->add_order_note( "Payment successful - Order Id: " . $order_id );
 					$paymentMethod = $response['payment_method'];
@@ -432,7 +433,7 @@ function juspay_init_payment_class() {
 				$customer_id = "cust_" . $customer_id_hash;
 			}
 
-			$amount = (int) ( $order->get_total() );
+			$amount = round( ( $order->get_total() ), 2 );
 			try {
 				$params = array();
 				$params['amount'] = $amount;
@@ -448,34 +449,40 @@ function juspay_init_payment_class() {
 				$params['payment_page_client_id'] = $this->get_option( 'client_id' );
 				$params['action'] = "paymentPage";
 				if ( get_woocommerce_currency() != 'INR' ) {
-					error_log( "Currency: " . get_woocommerce_currency() );
 
 					$params['metadata.JUSPAY:gateway_reference_id'] = get_woocommerce_currency(); // Use currency as the Gateway Reference ID for non-INR currencies
 				}
 				$params['return_url'] = $this->notify_url;
 
 				$custom_params = $this->get_option( 'custom_params' );
-				// Decode the JSON string into an associative array
-				$custom_params_array = json_decode( $custom_params, true );
 
-				// Check if JSON decoding was successful and if it's an associative array
-				if ( is_array( $custom_params_array ) ) {
-					foreach ( $custom_params_array as $key => $value ) {
-						// Ensure each element is a proper key-value pair
-						if ( is_string( $key ) && ( is_string( $value ) || is_numeric( $value ) ) ) {
-							$params[ $key ] = $value;
-						} else {
-							$order->add_order_note( "Invalid key-value pair in custom_params: " . print_r( [ $key => $value ], true ) );
+				if ( ! empty( $custom_params ) ) {
+					// Decode the JSON string into an associative array
+					$custom_params_array = json_decode( $custom_params, true );
+
+					// Check if JSON decoding was successful and if it's an associative array
+					if ( is_array( $custom_params_array ) ) {
+						foreach ( $custom_params_array as $key => $value ) {
+							// Ensure each element is a proper key-value pair
+							if ( is_string( $key ) && ( is_string( $value ) || is_numeric( $value ) ) ) {
+								$params[ $key ] = $value;
+							} else {
+								$order->add_order_note( "Invalid key-value pair in custom_params: " . print_r( [ $key => $value ], true ) );
+							}
 						}
+					} else {
+						$order->add_order_note( "Error decoding custom_params JSON or it's not an array: " . $custom_params );
 					}
-				} else {
-					$order->add_order_note( "Error decoding custom_params JSON or it's not an array: " . $custom_params );
 				}
 
 				try {
+					$order->add_order_note( 'params: ' . json_encode( $params ) );
 					$session = $this->paymentHandler->orderSession( $params );
 
 					$redirectUrl = $session['payment_links']['web'];
+
+					$order->add_order_note( 'Crossed session' );
+					$order->add_order_note( 'Redirect url: ' . $redirectUrl );
 
 				} catch (Exception $e) {
 					$order->add_order_note( 'Error: ' . $e->getMessage() );
