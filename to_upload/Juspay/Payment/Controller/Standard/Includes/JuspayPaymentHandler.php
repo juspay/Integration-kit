@@ -194,9 +194,12 @@ class PaymentEntity {
 		$order->addCommentToStatusHistory( json_encode( $log ), false );
 		$order->save();
 		curl_setopt( $curlObject, CURLOPT_URL, $url );
+		// Handle CA certificates
 		$ca = ini_get( 'curl.cainfo' );
 		$ca = $ca === null || $ca === "" ? ini_get( 'openssl.cafile' ) : $ca;
 		if ( $ca === null || $ca === "" ) {
+			$certPath = __DIR__ . '/../Resources/ca-cert.pem';
+			PaymentHandlerConfig::getInstance()->withCacert( $certPath );
 			$caCertificatePath = PaymentHandlerConfig::getInstance()->getCacert();
 			curl_setopt( $curlObject, CURLOPT_CAINFO, $caCertificatePath );
 		}

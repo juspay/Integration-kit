@@ -26,9 +26,9 @@ class MagentoVersionCheck implements ObserverInterface {
 		$minVersion = '2.3.0';
 
 		if ( version_compare( $magentoVersion, $minVersion, '>=' ) ) {
-			$this->configWriter->save( 'payment/juspay/active', 1 );
+			$this->configWriter->save( 'payment/smartgateway/active', 1 );
 		} else {
-			$this->configWriter->save( 'payment/juspay/active', 0 );
+			$this->configWriter->save( 'payment/smartgateway/active', 0 );
 			throw new LocalizedException(
 				__( 'This module is not compatible with Magento version %1. Compatible with versions above %2', $magentoVersion, $minVersion )
 			);

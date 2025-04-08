@@ -24,7 +24,7 @@ class Config {
 	/**
 	 * @var string
 	 */
-	protected $methodCode = 'juspay';
+	protected $methodCode = 'smartgateway';
 
 	/**
 	 * @var ScopeConfigInterface
@@ -150,8 +150,8 @@ class Config {
 	 */
 	public function canUseForCountry( $country ) {
 		/*
-								for specific country, the flag will set up as 1
-								*/
+									for specific country, the flag will set up as 1
+									*/
 		if ( $this->getConfigData( self::KEY_ALLOW_SPECIFIC ) == 1 ) {
 			$availableCountries = explode( ',', $this->getConfigData( self::KEY_SPECIFIC_COUNTRY ) );
 			if ( ! in_array( $country, $availableCountries ) ) {

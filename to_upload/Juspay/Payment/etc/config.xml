@@ -8,8 +8,8 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
     <default>
         <payment>
-            <juspay>
-                <active>0</active>
+            <smartgateway>
+                <active>1</active>
                 <order_status>processing</order_status>
                 <mode>production</mode>
                 <title>SmartGateway</title>
@@ -20,7 +20,7 @@
                 <api_url_sandbox>https://smartgatewayuat.hdfcbank.com/gateway/orders</api_url_sandbox>
                 <api_url>https://smartgateway.hdfcbank.com/gateway/orders</api_url>
                 <webhook>1</webhook>
-            </juspay>
+            </smartgateway>
         </payment>
     </default>
 </config>

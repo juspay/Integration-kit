@@ -10,7 +10,7 @@ define(
         'use strict';
         rendererList.push(
             {
-                type: 'juspay',
+                type: 'smartgateway',
                 component: 'Juspay_Payment/js/view/payment/method-renderer/juspay'
             }
         );
