@@ -95,7 +95,7 @@ class ConfigProvider implements ConfigProviderInterface {
 
 		$config = [ 
 			'payment' => [ 
-				'juspay' => [ 
+				'smartgateway' => [ 
 					'client_id' => $this->config->getClientId()
 				],
 			],

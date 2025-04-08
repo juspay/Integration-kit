@@ -15,13 +15,13 @@ use Magento\Sales\Model\Order\Payment\Transaction;
 
 class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 
-	const METHOD_CODE = 'juspay';
+	const METHOD_CODE = 'smartgateway';
 	/**
 	 * Payment code
 	 *
 	 * @var string
 	 */
-	protected $_code = 'juspay';
+	protected $_code = 'smartgateway';
 	protected $_isGateway = false;
 	protected $_isOffline = false;
 	protected $helper;
@@ -246,13 +246,14 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 
 		$order = $payment->getOrder();
 		$orderId = $order->getIncrementId();
+		$refundTransactionId = $payment->getOrder()->getPayment()->getData( 'refund_transaction_id' );
 
 		$merchant_id = $this->config->getMerchantId();
 		$apiUrl = $this->config->getMode() == 'sandbox' ? 'https://smartgatewayuat.hdfcbank.com/orders' : 'https:/smartgateway.hdfcbank.com/orders';
 		$apiKey = $this->config->getApiKey();
 
 		$params = array();
-		$params['unique_request_id'] = mt_rand( 100, 999 );
+		$params['unique_request_id'] = $refundTransactionId;
 		$params['merchant_id'] = $merchant_id;
 		$params['order_id'] = $orderId;
 		$params['amount'] = $amount;
@@ -413,7 +414,7 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 	}
 
 	public function logDebug( $message ) {
-		$dbg['juspay'] = $message;
+		$dbg['smartgateway'] = $message;
 		$this->logger->debug( $dbg, null, true );
 	}
 }

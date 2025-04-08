@@ -6,7 +6,7 @@ use Magento\Checkout\Model\ConfigProviderInterface;
 use Magento\Payment\Helper\Data as PaymentHelper;
 
 class JuspayPaymentConfigProvider implements ConfigProviderInterface {
-	protected $methodCode = "juspay";
+	protected $methodCode = "smartgateway";
 
 	protected $method;
 
@@ -19,7 +19,7 @@ class JuspayPaymentConfigProvider implements ConfigProviderInterface {
 	public function getConfig() {
 		return $this->method->isAvailable() ? [ 
 			'payment' => [ 
-				'juspay' => [ 
+				'smartgateway' => [ 
 					'redirectUrl' => $this->getRedirectUrl()
 				]
 			]

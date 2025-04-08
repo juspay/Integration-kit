@@ -45,7 +45,7 @@ define([
     },
 
     getCode: function () {
-      return "juspay";
+      return "smartgateway";
     },
 
     isActive: function () {
