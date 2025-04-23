@@ -97,6 +97,9 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 			case "AUTHENTICATION_FAILED":
 				$message = "Thank you for shopping with us. However, the transaction has been declined.";
 				break;
+			case "NEW":
+				$message = "Thank you for shopping with us. However, the transaction has been cancelled.";
+				break;
 			default:
 				$message = $message . $status;
 				break;
@@ -106,19 +109,13 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 	protected function restoreCart( $order ) {
 		$quote = $this->quoteFactory->create()->load( $order->getQuoteId() );
-		$quote->setIsActive( true )->save();
-		$this->_checkoutSession->replaceQuote( $quote );
 
-		foreach ( $order->getAllItems() as $item ) {
-			try {
-				$this->checkoutCart->addOrderItem( $item );
-			} catch (\Magento\Framework\Exception\LocalizedException $e) {
-				$order_id = $order->getIncrementId();
-				$this->addOrderNote( $order_id, 'Restoring cart items failed. Error: ' . $e->getMessage() );
-				continue;
-			}
+		if ( $quote && $quote->getId() ) {
+			$quote->setIsActive( true );
+			$quote->setReservedOrderId( null );
+			$this->quoteRepository->save( $quote );
+			$this->_checkoutSession->replaceQuote( $quote );
 		}
-
-		$this->checkoutCart->save();
 	}
+
 }

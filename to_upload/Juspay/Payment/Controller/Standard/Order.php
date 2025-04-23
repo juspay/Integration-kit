@@ -33,11 +33,7 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 			$this->logger->info( "Email field is required" );
 
-			$responseContent = [ 
-				'message' => "Email field is required",
-				'parameters' => []
-			];
-
+			$responseContent = [ 'message' => "Email field is required", 'parameters' => [] ];
 			$validationSuccess = false;
 			throw new Exception( "Customer email is missing." );
 
@@ -54,6 +50,7 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 			$quote->setCustomerIsGuest( true );
 		}
 
+		$quote->collectTotals();
 		$this->quoteRepository->save( $quote );
 
 		if ( empty( $this->getQuote()->getBillingAddress()->getPostcode() ) === true ) {
@@ -72,6 +69,7 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 				$shippingMethod = 'freeshipping_freeshipping';
 				$shippingAddress->setShippingMethod( $shippingMethod );
+				$quote->collectTotals();
 				$this->quoteRepository->save( $quote );
 
 			}
@@ -98,7 +96,6 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		}
 
 		if ( $validationSuccess ) {
-
 			try {
 
 				$this->logger->info( 'Starting order processing' );
@@ -134,6 +131,9 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 						$this->addOrderNote( $order_id, "OrderStatus API did not return a valid redirect URL." );
 						throw new Exception( "OrderStatus API did not return a valid redirect URL." );
 					}
+
+					$quote->setIsActive( 1 );
+					$quote->save();
 
 					$redirectUrl = $last_order['payment_links']['web'];
 
@@ -228,7 +228,7 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 									}
 								}
 							} else {
-								$this->addOrderNote( $order_id, "Error decoding custom_params JSON or it's not an array: " . $custom_params );
+								$this->addOrderNote( $order_id, "Invalid key-value pair in custom_params: " . print_r( [ $key => $value ], true ) );
 							}
 						}
 
@@ -255,6 +255,9 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 						$redirectUrl = $this->getCheckoutHelper()->getUrl( 'checkout/cart' );
 					}
+
+					$quote->setIsActive( 1 );
+					$quote->save();
 
 					$responseContent = [ 
 						'success' => true,
