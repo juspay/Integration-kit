@@ -34,6 +34,8 @@ abstract class JuspayPayment extends \Magento\Framework\App\Action\Action implem
 	protected $resultRedirectFactory;
 	protected $quoteFactory;
 	protected $checkoutCart;
+	protected $orderSender;
+	protected $_invoiceSender;
 
 	public function __construct(
 		\Magento\Framework\App\Action\Context $context,
@@ -53,6 +55,8 @@ abstract class JuspayPayment extends \Magento\Framework\App\Action\Action implem
 		\Magento\Framework\Controller\Result\RedirectFactory $resultRedirectFactory,
 		\Magento\Quote\Model\QuoteFactory $quoteFactory,
 		\Magento\Checkout\Model\Cart $checkoutCart,
+		\Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
+		\Magento\Sales\Model\Order\Email\Sender\InvoiceSender $invoiceSender,
 		\Psr\Log\LoggerInterface $logger ) {
 		parent::__construct( $context );
 
@@ -73,6 +77,8 @@ abstract class JuspayPayment extends \Magento\Framework\App\Action\Action implem
 		$this->resultRedirectFactory = $resultRedirectFactory;
 		$this->quoteFactory = $quoteFactory;
 		$this->checkoutCart = $checkoutCart;
+		$this->orderSender = $orderSender;
+		$this->_invoiceSender = $invoiceSender;
 
 		switch ( $this->config->getMode() ) {
 			case "sandbox":
@@ -125,6 +131,11 @@ abstract class JuspayPayment extends \Magento\Framework\App\Action\Action implem
 			$invoice->save();
 			$transactionSave = $this->_transaction->addObject( $invoice )->addObject( $invoice->getOrder() );
 			$transactionSave->save();
+
+			$this->_invoiceSender->send( $invoice );
+			$invoice->setEmailSent( true );
+			$invoice->save();
+
 			$this->addOrderNote( $orderId, 'Automatically INVOICED.' );
 		} else {
 			$this->addOrderNote( $orderId, "Order with ID $orderId cannot be invoiced." );

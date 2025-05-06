@@ -29,6 +29,8 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 				if ( $payment != null ) {
 					$this->paymentHandler->postProcessing( $order, $payment, $params );
+
+					$order = $this->getOrderByIncrementId( $params['order_id'] );
 				}
 
 				if ( $status == 'CHARGED' || $status == 'COD_INITIATED' ) {
@@ -36,12 +38,28 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 					if ( $order->getStatus() == 'pending_payment' || $order->getStatus() == 'pending' ) {
 						$this->_createInvoice( $params['order_id'] );
 					}
+					$order->setCanSendNewEmailFlag( true );
+					$this->_orderRepository->save( $order );
+
+					$this->orderSender->send( $order );
+
+					$order->setEmailSent( true );
+					$this->_orderRepository->save( $order );
+
 				}
 
 				if ( $status == 'CHARGED' || $status == 'COD_INITIATED' || $status == 'PENDING_VBV' ) {
+
+					$quote = $this->quoteRepository->get( $order->getQuoteId() );
+					if ( $quote ) {
+						$quote->setIsActive( false );
+						$this->quoteRepository->save( $quote );
+					}
 					$this->_checkoutSession->clearQuote();
+					$this->_checkoutSession->setQuoteId( null );
 					$this->messageManager->addSuccessMessage( $msg );
 					$returnUrl = $this->getCheckoutHelper()->getUrl( 'checkout/onepage/success' );
+
 				} else {
 					$this->restoreCart( $order );
 					$this->messageManager->addErrorMessage( $msg );
