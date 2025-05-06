@@ -105,6 +105,10 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 				$this->quoteRepository->save( $quote );
 				$order = $this->quoteManagement->submit( $quote );
 
+				$order->setCanSendNewEmailFlag( false );
+				$order->setEmailSent( false );
+				$order->save();
+
 				if ( ! $order ) {
 					throw new Exception( "Order submission failed, order object is null." );
 				}

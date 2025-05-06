@@ -1,0 +1,9 @@
+<script type="text/javascript">
+	require(['Magento_Customer/js/customer-data'], function (customerData) {
+		// Wait for widgets to finish initializing
+		setTimeout(function () {
+			customerData.invalidate(['cart']);
+			customerData.reload(['cart'], true);
+		}, 500);
+	});
+</script>
