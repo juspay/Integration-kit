@@ -9,6 +9,17 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		try {
 			$params = $this->getRequest()->getParams();
 
+			$order = $this->getOrderByIncrementId( $params['order_id'] );
+			$customerId = $order->getCustomerId();
+
+			if ( $customerId && ! $this->_customerSession->isLoggedIn() ) {
+				$this->_customerSession->setCustomerId( $customerId );
+				$this->_customerSession->setCustomerGroupId( \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID );
+				$this->_customerSession->setCustomerDataAsLoggedIn(
+					$this->customerRepository->getById( $customerId )
+				);
+			}
+
 			$statusParams = [ 
 				"order_id" => isset( $params['order_id'] ) ? $params['order_id'] : '',
 				"status" => isset( $params['status'] ) ? $params['status'] : '',
@@ -56,14 +67,25 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 						$this->quoteRepository->save( $quote );
 					}
 					$this->_checkoutSession->clearQuote();
+					$this->_checkoutSession->clearStorage();
 					$this->_checkoutSession->setQuoteId( null );
+					$this->_checkoutSession->setLastQuoteId( null );
+					$this->_checkoutSession->setLastOrderId( $order->getId() );
+					$this->_checkoutSession->setLastRealOrderId( $order->getIncrementId() );
+					$this->_checkoutSession->setLastSuccessQuoteId( $order->getQuoteId() );
+
 					$this->messageManager->addSuccessMessage( $msg );
 					$returnUrl = $this->getCheckoutHelper()->getUrl( 'checkout/onepage/success' );
 
 				} else {
 					$this->restoreCart( $order );
 					$this->messageManager->addErrorMessage( $msg );
-					$returnUrl = $this->getCheckoutHelper()->getUrl( 'checkout/cart' );
+
+					if ( $status == 'NEW' ) {
+						$returnUrl = $this->getCheckoutHelper()->getUrl( 'checkout' ) . '#payment';
+					} else {
+						$returnUrl = $this->getCheckoutHelper()->getUrl( 'checkout/cart' );
+					}
 				}
 
 				$orderNote = 'Transaction Completed. Order Status: ' . $params['status'];
