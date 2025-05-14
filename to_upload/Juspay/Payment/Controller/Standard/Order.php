@@ -10,6 +10,8 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 	public function execute() {
 
+		$this->_customerSession->start();
+
 		$validationSuccess = true;
 		$code = 200;
 		$responseContent = [];
@@ -44,10 +46,12 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		$quote->getShippingAddress()->setEmail( $email );
 		$quote->getPayment()->setMethod( 'smartgateway' );
 
-		// Ensure guest user settings
-		if ( ! $quote->getCustomerId() ) {
+		if ( ! $this->_customerSession->isLoggedIn() ) {
 			$quote->setCustomerId( null );
 			$quote->setCustomerIsGuest( true );
+		} else {
+			$quote->setCustomerIsGuest( false );
+			$quote->setCustomerId( $this->_customerSession->getCustomerId() );
 		}
 
 		$quote->collectTotals();
