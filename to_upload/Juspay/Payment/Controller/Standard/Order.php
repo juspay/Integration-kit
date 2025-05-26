@@ -105,6 +105,10 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 				$this->logger->info( 'Starting order processing' );
 
 				$quote = $this->quoteRepository->get( $quote->getId() );
+				$payment = $quote->getPayment();
+				$payment->setSkipOrderEmail( true );
+				$quote->setCanSendNewEmailFlag( false );
+				$quote->setData( 'email_sent', true );
 
 				$this->quoteRepository->save( $quote );
 				$order = $this->quoteManagement->submit( $quote );

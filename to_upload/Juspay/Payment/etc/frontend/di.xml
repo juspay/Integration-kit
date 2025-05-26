@@ -8,4 +8,8 @@
             </argument>
         </arguments>
     </type>
+
+    <type name="Magento\Sales\Model\Order\Email\Sender\OrderSender">
+        <plugin name="disable_order_email_plugin" type="Juspay\Payment\Plugin\DisableEmailPlugin" />
+    </type>
 </config>
