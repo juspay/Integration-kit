@@ -105,21 +105,30 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 				$this->logger->info( 'Starting order processing' );
 
 				$quote = $this->quoteRepository->get( $quote->getId() );
-				$payment = $quote->getPayment();
-				$payment->setSkipOrderEmail( true );
-				$quote->setCanSendNewEmailFlag( false );
-				$quote->setData( 'email_sent', true );
-
 				$this->quoteRepository->save( $quote );
+				$quote->setData( 'disable_order_emails', true );
+				$quote->setData( 'juspay_payment_pending', true );
 				$order = $this->quoteManagement->submit( $quote );
-
-				$order->setCanSendNewEmailFlag( false );
-				$order->setEmailSent( false );
-				$order->save();
 
 				if ( ! $order ) {
 					throw new Exception( "Order submission failed, order object is null." );
 				}
+
+				$order->setState( \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT )
+					->setStatus( \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT );
+
+				$order->setCanSendNewEmailFlag( false );
+				$order->setEmailSent( true );
+				$order->setIsCustomerNotified( false );
+
+				if ( method_exists( $order, 'setSendEmail' ) ) {
+					$order->setSendEmail( false );
+				}
+				$order->setData( 'juspay_payment_pending', true );
+				$order->setData( 'disable_order_emails', true );
+				$order->setData( 'skip_email_notification', true );
+
+				$order->save();
 
 				$payment = $order->getPayment();
 

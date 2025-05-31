@@ -386,12 +386,8 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 	}
 
 	private function notifyOrder() {
-		if ( $this->_order->getCanSendNewEmailFlag() ) {
-			$this->orderSender->send( $this->_order );
-			$this->_order->addStatusHistoryComment( 'Customer email sent' )->setIsCustomerNotified( true )->save();
-		} else {
-			$this->_order->addStatusHistoryComment( 'Email not sent (canSendNewEmailFlag=false)' )->setIsCustomerNotified( false )->save();
-		}
+		$this->orderSender->send( $this->_order );
+		$this->order->addStatusHistoryComment( 'Customer email sent' )->setIsCustomerNotified( true )->save();
 	}
 
 	private function updateOrder( $message, $state, $status, $notify ) {

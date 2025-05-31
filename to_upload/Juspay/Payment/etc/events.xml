@@ -3,4 +3,20 @@
     <event name="controller_action_predispatch">
         <observer name="juspay_payment_check_magento_version" instance="Juspay\Payment\Observer\MagentoVersionCheck"/>
     </event>
+
+    <event name="sales_order_save_after">
+        <observer name="juspay_prevent_order_email" instance="Juspay\Payment\Observer\PreventOrderEmailObserver" />
+    </event>
+    
+    <event name="checkout_onepage_controller_success_action">
+        <observer name="juspay_prevent_success_email" instance="Juspay\Payment\Observer\PreventOrderEmailObserver" />
+    </event>
+    
+    <event name="sales_email_order_template_vars_before">
+        <observer name="juspay_prevent_template_email" instance="Juspay\Payment\Observer\PreventOrderEmailObserver" />
+    </event>
+    
+    <event name="sales_order_place_after">
+        <observer name="juspay_prevent_place_email" instance="Juspay\Payment\Observer\PreventOrderEmailObserver" />
+    </event>
 </config>
