@@ -334,6 +334,11 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 	}
 
 	public function postProcessing( \Magento\Sales\Model\Order $order, \Magento\Framework\DataObject $payment, $response ) {
+
+		if ( in_array( $order->getStatus(), [ 'processing', 'complete', 'closed', 'canceled' ] ) ) {
+			$this->logger->info( "postProcessing skipped: Order {$order->getIncrementId()} already in terminal state." );
+			return;
+		}
 		try {
 			$order_id = $order->getIncrementId();
 

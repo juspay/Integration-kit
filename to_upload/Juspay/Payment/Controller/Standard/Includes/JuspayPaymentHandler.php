@@ -45,6 +45,11 @@ class PaymentHandler {
 	public function postProcessing( Order $order,
 		\Magento\Framework\DataObject $payment, $response ) {
 
+		if ( in_array( $order->getStatus(), [ 'processing', 'complete', 'closed', 'canceled' ] ) ) {
+			$this->logger->info( "postProcessing skipped: Order {$order->getIncrementId()} already in terminal state." );
+			return;
+		}
+
 		$payment->setTransactionId( $response['order_id'] );
 		$payment->setTransactionAdditionalInfo( 'status_message', $response['status'] );
 
