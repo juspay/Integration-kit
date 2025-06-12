@@ -6,6 +6,7 @@ use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\CustomerData\SectionPoolInterface;
 use Magento\Framework\HTTP\PhpEnvironment\Response;
 use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Customer\Model\Session as CustomerSession;
 use Psr\Log\LoggerInterface;
 
 class ClearCartPlugin {
@@ -25,6 +26,11 @@ class ClearCartPlugin {
 	protected $cartRepository;
 
 	/**
+	 * @var CustomerSession
+	 */
+	protected $customerSession;
+
+	/**
 	 * @var LoggerInterface
 	 */
 	protected $logger;
@@ -33,11 +39,13 @@ class ClearCartPlugin {
 		CheckoutSession $checkoutSession,
 		SectionPoolInterface $sectionPool,
 		CartRepositoryInterface $cartRepository,
+		CustomerSession $customerSession,
 		LoggerInterface $logger
 	) {
 		$this->checkoutSession = $checkoutSession;
 		$this->sectionPool = $sectionPool;
 		$this->cartRepository = $cartRepository;
+		$this->customerSession = $customerSession;
 		$this->logger = $logger;
 	}
 
@@ -54,15 +62,19 @@ class ClearCartPlugin {
 			$params = $subject->getRequest()->getParams();
 
 			if ( isset( $params['status'] ) && $this->isSuccessfulPayment( $params['status'] ) ) {
-				$this->logger->info( 'Juspay Payment: Clearing cart after successful payment', [ 
+				$this->logger->info( 'Juspay Payment: Processing successful payment', [ 
 					'order_id' => $params['order_id'] ?? 'unknown',
 					'status' => $params['status']
 				] );
 
+				// Clear cart data
 				$this->forceClearCart();
 
-				// Add JavaScript to response to clear localStorage
-				$this->addCartClearScript( $subject->getResponse() );
+				// Set a flag in customer session to clear localStorage on next page load
+				$this->customerSession->setData( 'clear_cart_storage', true );
+				$this->customerSession->setData( 'juspay_payment_success', true );
+
+				$this->logger->info( 'Juspay Payment: Cart clearing completed' );
 			}
 		} catch (\Exception $e) {
 			$this->logger->error( 'Juspay Payment: Error in cart clearing plugin', [ 
@@ -97,27 +109,42 @@ class ClearCartPlugin {
 				// Deactivate the quote
 				try {
 					$quote = $this->cartRepository->get( $quoteId );
-					$quote->setIsActive( false );
-					$this->cartRepository->save( $quote );
+					if ( $quote->getIsActive() ) {
+						$quote->setIsActive( false );
+						$this->cartRepository->save( $quote );
+						$this->logger->info( 'Juspay Payment: Quote deactivated', [ 'quote_id' => $quoteId ] );
+					}
 				} catch (\Exception $e) {
 					$this->logger->warning( 'Could not deactivate quote: ' . $e->getMessage() );
 				}
 			}
 
-			// Clear all checkout session data
+			// Save important session data for success page
+			$lastOrderId = $this->checkoutSession->getLastOrderId();
+			$lastRealOrderId = $this->checkoutSession->getLastRealOrderId();
+			$lastSuccessQuoteId = $this->checkoutSession->getLastSuccessQuoteId();
+
+			// Clear checkout session data but preserve what's needed for success page
 			$this->checkoutSession->clearQuote();
 			$this->checkoutSession->clearStorage();
 			$this->checkoutSession->clearHelperData();
 
-			// Unset all quote-related session data
+			// Unset current quote data but preserve success data
 			$this->checkoutSession->unsQuoteId();
-			$this->checkoutSession->unsLastQuoteId();
-			$this->checkoutSession->unsLastSuccessQuoteId();
-			$this->checkoutSession->unsLastOrderId();
-			$this->checkoutSession->unsLastRealOrderId();
 
-			// Start a new quote for future purchases
-			$this->checkoutSession->getQuote();
+			// Restore important session data for success page
+			if ( $lastOrderId ) {
+				$this->checkoutSession->setLastOrderId( $lastOrderId );
+			}
+			if ( $lastRealOrderId ) {
+				$this->checkoutSession->setLastRealOrderId( $lastRealOrderId );
+			}
+			if ( $lastSuccessQuoteId ) {
+				$this->checkoutSession->setLastSuccessQuoteId( $lastSuccessQuoteId );
+			}
+
+			// Force invalidate customer data sections
+			$this->invalidateCustomerDataSections();
 
 			$this->logger->info( 'Juspay Payment: Cart cleared successfully' );
 
@@ -129,51 +156,21 @@ class ClearCartPlugin {
 	}
 
 	/**
-	 * Add JavaScript to response to clear localStorage
-	 *
-	 * @param Response $response
+	 * Invalidate customer data sections
 	 */
-	protected function addCartClearScript( $response ) {
+	protected function invalidateCustomerDataSections() {
 		try {
-			$script = '
-            <script type="text/javascript">
-            require([
-                "Magento_Customer/js/customer-data",
-                "domReady!"
-            ], function (customerData) {
-                // Clear cart section from localStorage
-                customerData.invalidate(["cart"]);
-                customerData.reload(["cart"], true);
-                
-                // Clear localStorage cache
-                setTimeout(function() {
-                    if (typeof Storage !== "undefined") {
-                        var storage = JSON.parse(localStorage.getItem("mage-cache-storage") || "{}");
-                        if (storage.cart) {
-                            delete storage.cart;
-                            localStorage.setItem("mage-cache-storage", JSON.stringify(storage));
-                        }
-                    }
-                }, 500);
-                
-                // Force reload cart data after clearing
-                setTimeout(function() {
-                    customerData.reload(["cart"], true);
-                }, 1000);
-            });
-            </script>';
+			// Mark sections as invalid so they get reloaded
+			$sectionsToInvalidate = [ 'cart', 'checkout-data' ];
 
-			// Get current response body and append script
-			$body = $response->getBody();
-			if ( strpos( $body, '</body>' ) !== false ) {
-				$body = str_replace( '</body>', $script . '</body>', $body );
-				$response->setBody( $body );
+			foreach ( $sectionsToInvalidate as $sectionName ) {
+				$this->customerSession->setData( 'section_data_clean', [ 
+					$sectionName => time()
+				] );
 			}
 
 		} catch (\Exception $e) {
-			$this->logger->error( 'Juspay Payment: Error adding cart clear script', [ 
-				'error' => $e->getMessage()
-			] );
+			$this->logger->error( 'Error invalidating customer data sections: ' . $e->getMessage() );
 		}
 	}
 }

@@ -1,0 +1,111 @@
+<?php /** @var \Juspay\Payment\Block\Success\ClearCart $block */ ?>
+<?php if ( $block->shouldClearCart() ) : ?>
+	<script type="text/javascript">
+		require([
+			'Magento_Customer/js/customer-data',
+			'jquery',
+			'domReady!'
+		], function (customerData, $) {
+			'use strict';
+
+			function clearCartData() {
+				try {
+					// Check if customerData is properly loaded and has required methods
+					if (!customerData || typeof customerData !== 'object') {
+						return;
+					}
+
+					// Method 1: Set empty cart data directly (with validation)
+					if (typeof customerData.set === 'function') {
+						customerData.set('cart', {
+							items: [],
+							subtotal: '',
+							subtotalAmount: 0,
+							summary_count: 0,
+							isGuestCheckoutAllowed: true,
+							website_id: null
+						});
+					} else {
+						console.error('Juspay: customerData.set is not available');
+					}
+
+					// Method 2: Clear specific localStorage items safely (avoid mage-cache-storage)
+					if (typeof Storage !== "undefined") {
+						try {
+							// Only clear specific cart-related keys, not the main storage keys
+							var keysToRemove = [];
+							for (var i = 0; i < localStorage.length; i++) {
+								var key = localStorage.key(i);
+								if (key && (
+									key.includes('checkout') ||
+									key.includes('cart-data') ||
+									key.includes('minicart') ||
+									(key.includes('mage-cache') && key.includes('cart') && !key.includes('mage-cache-storage'))
+								)) {
+									keysToRemove.push(key);
+								}
+							}
+							keysToRemove.forEach(function (key) {
+								try {
+									localStorage.removeItem(key);
+								} catch (e) {
+									console.log('Juspay: Error removing key:', key, e);
+								}
+							});
+						} catch (e) {
+							console.log('Juspay: Error clearing localStorage:', e);
+						}
+					}
+
+					// Method 3: Update UI directly
+					setTimeout(function () {
+						try {
+							$('.minicart-wrapper .counter-number').text('0');
+							$('.minicart-wrapper .counter-label').text('');
+							$('.minicart-wrapper .action.showcart .counter.qty').hide();
+							$('.minicart-wrapper').removeClass('active');
+							$('.minicart-items-wrapper').empty();
+						} catch (e) {
+							console.log('Juspay: Error updating UI:', e);
+						}
+					}, 500);
+
+					// Method 4: Try to invalidate sections safely with delay
+					setTimeout(function () {
+						try {
+							if (customerData && typeof customerData.invalidate === 'function') {
+								// Don't invalidate immediately after setting data
+
+								// Instead, just reload after a longer delay
+								setTimeout(function () {
+									if (typeof customerData.reload === 'function') {
+										customerData.reload(['cart'], false);
+									}
+								}, 2000);
+							}
+						} catch (e) {
+							console.log('Juspay: Error with customerData operations:', e);
+						}
+					}, 2000);
+
+				} catch (e) {
+					console.error('Juspay: Error in cart clearing process:', e);
+				}
+			}
+
+			// Wait a bit before executing to ensure customerData is fully initialized
+			setTimeout(function () {
+				clearCartData();
+			}, 100);
+
+			// Also execute when page becomes visible (handles tab switching)
+			if (typeof document.addEventListener === 'function') {
+				document.addEventListener('visibilitychange', function () {
+					if (!document.hidden) {
+						setTimeout(clearCartData, 200);
+					}
+				});
+			}
+		});
+	</script>
+<?php endif; ?>

@@ -59,18 +59,7 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 					if ( $status == 'CHARGED' || $status == 'COD_INITIATED' || $status == 'PENDING_VBV' ) {
 
-						$quote = $this->quoteRepository->get( $order->getQuoteId() );
-						if ( $quote ) {
-							$quote->setIsActive( false );
-							$this->quoteRepository->save( $quote );
-						}
-						$this->_checkoutSession->clearQuote();
-						$this->_checkoutSession->clearStorage();
-						$this->_checkoutSession->setQuoteId( null );
-						$this->_checkoutSession->setLastQuoteId( null );
-						$this->_checkoutSession->setLastOrderId( $order->getId() );
-						$this->_checkoutSession->setLastRealOrderId( $order->getIncrementId() );
-						$this->_checkoutSession->setLastSuccessQuoteId( $order->getQuoteId() );
+						$this->forceCartClear( $order, $params );
 
 						$this->messageManager->addSuccessMessage( $msg );
 						$returnUrl = $this->getCheckoutHelper()->getUrl( 'checkout/onepage/success' );
@@ -162,4 +151,55 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		}
 	}
 
+	protected function forceCartClear( $order, $params ) {
+		try {
+			// 1. Get and deactivate the quote
+			$quote = $this->quoteRepository->get( $order->getQuoteId() );
+			$customerId = $order->getCustomerId();
+			if ( $quote ) {
+				$quote->setIsActive( false );
+				$quote->setReservedOrderId( null );
+				$this->quoteRepository->save( $quote );
+
+				$this->addOrderNote( $params['order_id'], 'Quote deactivated: ' . $quote->getId() );
+			}
+
+			// 2. Clear all checkout session data
+			$this->_checkoutSession->clearQuote();
+			$this->_checkoutSession->clearStorage();
+			$this->_checkoutSession->clearHelperData();
+
+			// 3. Unset quote-related session data
+			$this->_checkoutSession->unsQuoteId();
+			$this->_checkoutSession->unsLastQuoteId();
+			$this->_checkoutSession->setQuoteId( null );
+			$this->_checkoutSession->setLastQuoteId( null );
+
+			// 4. Set success page data
+			$this->_checkoutSession->setLastOrderId( $order->getId() );
+			$this->_checkoutSession->setLastRealOrderId( $order->getIncrementId() );
+			$this->_checkoutSession->setLastSuccessQuoteId( $order->getQuoteId() );
+
+			// 5. Create new empty quote for future use
+			$newQuote = $this->quoteFactory->create();
+			$newQuote->setStoreId( $order->getStoreId() );
+			$newQuote->setIsActive( true );
+
+			if ( $customerId ) {
+				$newQuote->setCustomerId( $customerId );
+			}
+
+			$this->quoteRepository->save( $newQuote );
+			$this->_checkoutSession->setQuoteId( $newQuote->getId() );
+
+			// 6. Set flag for frontend clearing
+			$this->_customerSession->setData( 'juspay_payment_success', true );
+			$this->_customerSession->setData( 'juspay_cart_cleared', time() );
+
+			$this->addOrderNote( $params['order_id'], 'Cart cleared successfully. New quote: ' . $newQuote->getId() );
+
+		} catch (\Exception $e) {
+			$this->addOrderNote( $params['order_id'], 'Error clearing cart: ' . $e->getMessage() );
+		}
+	}
 }

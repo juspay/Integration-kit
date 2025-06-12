@@ -9,11 +9,4 @@
     <type name="Magento\Sales\Model\Order\Email\Sender\InvoiceSender">
         <plugin name="juspay_prevent_invoice_email" type="Juspay\Payment\Plugin\PreventOrderEmailPlugin" sortOrder="10" />
     </type>
-
-    <type name="Juspay\Payment\Controller\Standard\Response">
-        <plugin name="clear_cart_after_payment" 
-                type="Juspay\Payment\Plugin\ClearCartPlugin" 
-                sortOrder="10" 
-                disabled="false"/>
-    </type>
 </config>
