@@ -1,0 +1,6 @@
+{
+    "MERCHANT_ID": "MERCHANT_ID",
+    "PAYMENT_PAGE_CLIENT_ID": "123",
+    "API_KEY": "Your-API_KEY",
+    "BASE_URL": "https://sandbox.juspay.in"
+}
