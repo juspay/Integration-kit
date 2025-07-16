@@ -1,6 +1,7 @@
 <?php
-if ( ! defined( 'ABSPATH' ) )
+if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
+}
 
 require_once __DIR__ . '/../juspay-payment.php';
 
@@ -21,12 +22,11 @@ class Juspay_Webhook {
 	}
 
 	public function process() {
-		$post = file_get_contents( 'php://input' );
-		if ( ! empty( $post ) ) {
-			$eventData = json_decode( $post, true );
-			$data = $eventData['req_body'] ?? [];
-			$headers = getallheaders();
-			$authorization = $headers['authorization'];
+		$raw_post_data = file_get_contents( 'php://input' );
+		if ( ! empty( $raw_post_data ) ) {
+			$data = json_decode( $raw_post_data, true );
+			$headers = function_exists( 'getallheaders' ) ? array_change_key_case( getallheaders(), CASE_LOWER ) : [];
+			$authorization = $headers['authorization'] ?? '';
 
 			$enabled = $this->juspay->get_option( 'enable_webhook' );
 
@@ -61,19 +61,19 @@ class Juspay_Webhook {
 		//
 		// Order entity should be sent as part of the webhook payload
 		//
-		$order_id = $data['content']['order']['order_id'];
+		$order_id = $data['content']['order']['order_id'] ?? null;
 
 		$order = wc_get_order( $order_id );
 
 		if ( $order ) {
-			if ( $order->get_status() == 'pending' ) {
-				$order->update_status( 'processing' );
-				$order->payment_complete( $order_id );
-				$order->add_order_note( "Payment successful (via Webhook) - Order Id: " . $order_id );
+			if ( $order->get_status() === 'pending' || $order->get_status() === 'on-hold' ) {
+				$txn_id = $data['content']['order']['txn_id'] ?? '';
+				$order->payment_complete( $txn_id );
+				$order->add_order_note( "Payment successful (via Webhook). Transaction ID: $txn_id" );
 			}
-			$paymentMethod = $data['content']['order']['payment_method'];
-			$paymentMethodType = $data['content']['order']['payment_method_type'];
-			$order->add_order_note( "Payment Method : $paymentMethod ($paymentMethodType) - Order Id: " . $order_id );
+			$paymentMethod = $data['content']['order']['payment_method'] ?? 'N/A';
+			$paymentMethodType = $data['content']['order']['payment_method_type'] ?? 'N/A';
+			$order->add_order_note( "Payment Method: $paymentMethod ($paymentMethodType)" );
 		}
 		exit;
 	}
@@ -82,16 +82,17 @@ class Juspay_Webhook {
 	 * @param array $data Webook Data
 	 */
 	protected function paymentFailed( array $data ) {
-		$order_id = $data['content']['order']['order_id'];
+		$order_id = $data['content']['order']['order_id'] ?? null;
 
 		$order = wc_get_order( $order_id );
 
 		if ( $order ) {
 			$order->update_status( 'failed' );
-			$order->add_order_note( "Payment failed (via Webhook) - Order Id: " . $order_id );
-			$paymentMethod = $data['content']['order']['payment_method'];
-			$paymentMethodType = $data['content']['order']['payment_method_type'];
-			$order->add_order_note( "Payment Method : $paymentMethod ($paymentMethodType) - Order Id: " . $order_id );
+			$txn_id = $data['content']['order']['txn_id'] ?? '';
+			$order->add_order_note( "Payment failed (via Webhook). Transaction ID: $txn_id" );
+			$paymentMethod = $data['content']['order']['payment_method'] ?? 'N/A';
+			$paymentMethodType = $data['content']['order']['payment_method_type'] ?? 'N/A';
+			$order->add_order_note( "Payment Method: $paymentMethod ($paymentMethodType)" );
 		}
 		exit;
 	}
