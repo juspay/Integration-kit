@@ -9,22 +9,29 @@ class Cancel extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		$goto = false;
 
 		try {
+			if ( ! $this->config->isPluginEnabled() ) {
+				$this->getResponse()->setRedirect( $this->getCheckoutHelper()->getUrl( 'checkout/cart' ) );
+				return;
+			}
 			$quote = $this->getQuote();
 			$order_id = $quote->getReservedOrderId();
 
 			if ( $order_id ) {
 				$order = $this->_orderFactory->create()->loadByIncrementId( $order_id );
 
-				if ( $order && $order->getId() && $order->canCancel() ) {
+				if ( $order && $order->getId()
+					&& $order->getPayment()->getMethod() === \Juspay\Payment\Model\PaymentMethod::METHOD_CODE
+					&& $order->canCancel() && $order->getStatus() == 'pending'
+				) {
 					$order->registerCancellation( 'User pressed back before payment.' );
 					$this->_orderRepository->save( $order );
 
 					$this->logger->info( "Order {$order_id} cancelled due to backpress." );
-				}
-			}
 
-			if ( $this->_checkoutSession->restoreQuote() ) {
-				$goto = 'paymentMethod';
+					if ( $this->_checkoutSession->restoreQuote() ) {
+						$goto = 'paymentMethod';
+					}
+				}
 			}
 
 		} catch (\Exception $e) {

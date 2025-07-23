@@ -7,7 +7,17 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		$returnUrl = $this->getCheckoutHelper()->getUrl( 'checkout' );
 
 		try {
+			if ( ! $this->config->isPluginEnabled() ) {
+				$this->getResponse()->setRedirect( $this->getCheckoutHelper()->getUrl( 'checkout/cart' ) );
+				return;
+			}
 			$params = $this->getRequest()->getParams();
+			$order = $this->getOrderByIncrementId( $params['order_id'] );
+
+			if ( $order->getPayment()->getMethod() !== \Juspay\Payment\Model\PaymentMethod::METHOD_CODE ) {
+				$this->getResponse()->setRedirect( $returnUrl );
+				return;
+			}
 
 			$order = $this->getOrderByIncrementId( $params['order_id'] );
 			$customerId = $order->getCustomerId();

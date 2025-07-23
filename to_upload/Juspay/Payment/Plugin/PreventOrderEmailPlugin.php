@@ -2,15 +2,18 @@
 
 namespace Juspay\Payment\Plugin;
 
-use Magento\Sales\Model\Order\Email\Sender\OrderSender;
+use Juspay\Payment\Model\Config;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Psr\Log\LoggerInterface;
 
 class PreventOrderEmailPlugin {
 	protected $logger;
+	protected $config;
 
-	public function __construct( LoggerInterface $logger ) {
+	public function __construct( LoggerInterface $logger, Config $config ) {
 		$this->logger = $logger;
+		$this->config = $config;
 	}
 
 	/**
@@ -22,6 +25,9 @@ class PreventOrderEmailPlugin {
 	 * @return array
 	 */
 	public function beforeSend( OrderSender $subject, Order $order, $forceSyncMode = false ) {
+		if ( ! $this->config->isPluginEnabled() ) {
+			return [ $order, $forceSyncMode ];
+		}
 		// Check if this is a Juspay payment with pending status
 		if ( $this->shouldPreventEmail( $order ) ) {
 			$this->logger->info( 'Preventing order email for Juspay order: ' . $order->getIncrementId() );
@@ -73,7 +79,7 @@ class PreventOrderEmailPlugin {
 	 * @return bool
 	 */
 	public function afterSend( OrderSender $subject, $result, Order $order ) {
-		if ( $result && $this->shouldPreventEmail( $order ) ) {
+		if ( $result && $this->shouldPreventEmail( $order ) && $this->config->isPluginEnabled() ) {
 			$this->logger->warning( 'Order email was sent despite prevention attempts for order: ' . $order->getIncrementId() );
 		}
 

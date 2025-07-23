@@ -138,7 +138,7 @@ class Config {
 	/**
 	 * @return bool
 	 */
-	public function isActive() {
+	public function isPluginEnabled() {
 		return (bool) (int) $this->getConfigData( self::KEY_ACTIVE, $this->storeId );
 	}
 

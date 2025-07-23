@@ -89,7 +89,7 @@ class ConfigProvider implements ConfigProviderInterface {
 	 * @return array|void
 	 */
 	public function getConfig() {
-		if ( ! $this->config->isActive() ) {
+		if ( ! $this->config->isPluginEnabled() ) {
 			return [];
 		}
 
