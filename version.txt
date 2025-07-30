@@ -1,2 +1,2 @@
-Version : 2.2.6
-Updated : 23-07-2025
+Version : 2.2.7
+Updated : 30-07-2025

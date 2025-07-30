@@ -5,6 +5,7 @@ namespace Juspay\Payment\Controller\Standard;
 use Exception;
 use function hash_hmac;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Sales\Model\Order as SalesOrder;
 
 class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
@@ -114,8 +115,8 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 					throw new Exception( "Order submission failed, order object is null." );
 				}
 
-				$order->setState( \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT )
-					->setStatus( \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT );
+				$order->setState( SalesOrder::STATE_PENDING_PAYMENT )
+					->setStatus( SalesOrder::STATE_PENDING_PAYMENT );
 
 				$order->setCanSendNewEmailFlag( false );
 				$order->setEmailSent( true );
@@ -127,6 +128,11 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 				$order->setData( 'juspay_payment_pending', true );
 				$order->setData( 'disable_order_emails', true );
 				$order->setData( 'skip_email_notification', true );
+
+				if ( $order->getCustomerIsGuest() ) {
+					$order->setCustomerFirstname( $quote->getBillingAddress()->getFirstname() );
+					$order->setCustomerLastname( $quote->getBillingAddress()->getLastname() );
+				}
 
 				$order->save();
 
