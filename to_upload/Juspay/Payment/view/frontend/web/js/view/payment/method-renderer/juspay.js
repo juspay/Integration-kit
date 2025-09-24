@@ -12,6 +12,8 @@ define([
   "Magento_Ui/js/model/messageList",
   "Magento_Checkout/js/model/shipping-save-processor",
   "Magento_Ui/js/modal/modal",
+  "Magento_Checkout/js/action/get-payment-information",
+  "Magento_Checkout/js/checkout-data",
 ], function (
   Component,
   quote,
@@ -25,7 +27,9 @@ define([
   fullScreenLoader,
   messageList,
   shippingSaveProcessor,
-  modal
+  modal,
+  getPaymentInformationAction,
+  checkoutData
 ) {
   "use strict";
 
@@ -34,6 +38,49 @@ define([
       template: "Juspay_Payment/payment/juspay",
       juspayServiceLoaded: false,
       juspay_response: [],
+    },
+
+    initialize: function () {
+        this._super();
+        this.handlePaymentStepLoad();
+        window.addEventListener('popstate', this.handlePaymentStepLoad.bind(this));
+    },
+
+    cancelOrder: function () {
+        fullScreenLoader.startLoader();
+        $.ajax({
+            url: url.build('juspay_payment/standard/cancel'),
+            type: 'POST',
+            success: function (response) {
+                if (response.success && response.gotoSection === 'paymentMethod') {
+                    var paymentInfoPromise = getPaymentInformationAction([]);
+
+                    paymentInfoPromise.done(function () {
+                        if (!quote.isVirtual()) {
+                            var shippingAddress = quote.shippingAddress();
+                            if (shippingAddress) {
+                                checkoutData.setShippingAddressFromData(shippingAddress);
+                            }
+                        }
+                    }).always(function () {
+                        fullScreenLoader.stopLoader();
+                    });
+                } else {
+                    fullScreenLoader.stopLoader();
+                }
+            },
+            error: function () {
+                fullScreenLoader.stopLoader();
+            }
+        });
+    },
+
+    handlePaymentStepLoad: function () {
+        if (location.pathname.indexOf('/checkout') === 0 && location.hash === '#payment') {
+            if (window.checkoutConfig.quoteData.entity_id) {
+                this.cancelOrder();
+            }
+        }
     },
 
     getClientId: function () {

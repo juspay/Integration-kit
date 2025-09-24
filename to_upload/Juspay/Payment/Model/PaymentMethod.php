@@ -300,6 +300,9 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 	}
 
 	public function isAvailable( \Magento\Quote\Api\Data\CartInterface $quote = null ) {
+		if ( ! $this->config->isPluginEnabled() ) {
+			return false;
+		}
 
 		if ( function_exists( 'curl_init' ) == false ) {
 			return false;

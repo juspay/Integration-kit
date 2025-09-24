@@ -48,9 +48,12 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 				$this->_checkoutSession->setLastQuoteId( $order->getQuoteId() );
 				$this->_checkoutSession->setLastSuccessQuoteId( $order->getQuoteId() );
 
-				if ( $payment != null && ! in_array( $order->getStatus(), [ 'processing', 'complete', 'closed', 'canceled' ] ) ) {
+				if ( ( $payment != null && ! in_array( $order->getStatus(), [ 'processing', 'complete', 'closed', 'canceled' ] ) ) || $status == 'NEW' ) {
 
-					$this->paymentHandler->postProcessing( $order, $payment, $params );
+
+					if ( $status != 'NEW' ) {
+						$this->paymentHandler->postProcessing( $order, $payment, $params );
+					}
 					$order = $this->getOrderByIncrementId( $params['order_id'] );
 
 					if ( $status == 'CHARGED' || $status == 'COD_INITIATED' ) {

@@ -43,8 +43,12 @@ class Order extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		}
 
 		$quote->setCustomerEmail( $email );
-		$quote->getBillingAddress()->setEmail( $email );
-		$quote->getShippingAddress()->setEmail( $email );
+		if ( ! $quote->getBillingAddress()->getEmail() ) {
+			$quote->getBillingAddress()->setEmail( $email );
+		}
+		if ( ! $quote->getShippingAddress()->getEmail() ) {
+			$quote->getShippingAddress()->setEmail( $email );
+		}
 		$quote->getPayment()->setMethod( 'smartgateway' );
 
 		if ( ! $this->_customerSession->isLoggedIn() ) {
