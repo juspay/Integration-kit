@@ -83,7 +83,7 @@ class PaymentHandler {
 			}
 
 			if ( ! isset( $params['order_id'] ) ) {
-				throw new InvalidArgumentException( 'Order ID is missing in parameters.' );
+				throw new Exception( 'Order ID is missing in parameters.' );
 			}
 
 			$order = wc_get_order( $params['order_id'] );
@@ -158,11 +158,11 @@ class PaymentEntity {
 	public static function makeServiceCall( $path, $params, $method, $contentType = null, $orderId ) {
 		// Validate inputs
 		if ( empty( $path ) ) {
-			throw new InvalidArgumentException( 'Path cannot be empty.' );
+			throw new Exception( 'Path cannot be empty.' );
 		}
 
 		if ( ! in_array( $method, [ RequestMethod::GET, RequestMethod::POST ] ) ) {
-			throw new InvalidArgumentException( 'Invalid HTTP method.' );
+			throw new Exception( 'Invalid HTTP method.' );
 		}
 
 		$order = wc_get_order( $orderId );

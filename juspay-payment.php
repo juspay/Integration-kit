@@ -4,8 +4,8 @@
 Plugin Name: SmartGateway
 Plugin URI: https://juspay.in/
 Description:  WooCommerce payment plugin for Juspay.in
-Version: 1.3.9
-Updated: 16/07/2025
+Version: 1.3.10
+Updated: 22/09/2025
 Author: Juspay Technologies
 Author URI: https://juspay.in/
 License: GPLv2 or later
@@ -106,6 +106,8 @@ function juspay_init_payment_class() {
 				add_action( 'woocommerce_order_actions', array( $this, 'juspay_add_manual_actions' ) );
 
 				add_action( 'woocommerce_order_action_wc_manual_sync_action', array( $this, 'juspay_process_manual_sync_action' ) );
+
+				add_filter( 'woocommerce_email_enabled_new_order', array( $this, 'maybe_disable_admin_new_order_email' ), 10, 2 );
 
 				wp_register_script(
 					'juspay-checkout-blocks',
@@ -226,10 +228,10 @@ function juspay_init_payment_class() {
 			$msg['class'] = 'error';
 			$msg['message'] = "Thank you for shopping with us. However, the transaction has been declined.";
 
-			$order_id = $_REQUEST['order_id'];
-			$status = $_REQUEST["status"];
-			$signature = $_REQUEST["signature"];
-			$statusId = $_REQUEST["status_id"];
+			$order_id = isset( $_REQUEST['order_id'] ) ? $_REQUEST['order_id'] : null;
+			$status = isset( $_REQUEST["status"] ) ? $_REQUEST["status"] : null;
+			$signature = isset( $_REQUEST["signature"] ) ? $_REQUEST["signature"] : null;
+			$statusId = isset( $_REQUEST["status_id"] ) ? $_REQUEST["status_id"] : null;
 			$params = [ "order_id" => $order_id, "status" => $status, "signature" => $signature, "status_id" => $statusId ];
 
 			$status = $this->get_order_status( $params );
@@ -303,11 +305,13 @@ function juspay_init_payment_class() {
 		function get_order_status( $params ) {
 			if ( $this->paymentHandler->validateHMAC_SHA256( $params ) === false ) {
 				$order = wc_get_order( $params['order_id'] );
-				$order->add_order_note( 'Signature verification failed - Order ID: ' . $params['order_id'] );
-				$order->add_order_note( 'Note: Ensure that the \'Response Key\' is properly configured in plugin settings.' );
-				$order->add_order_note( 'Falling back to Order Status API' );
-				$order = $this->paymentHandler->orderStatus( $params["order_id"] );
-				return $order['status'];
+				if ( $order ) {
+					$order->add_order_note( 'Signature verification failed - Order ID: ' . $params['order_id'] );
+					$order->add_order_note( 'Note: Ensure that the \'Response Key\' is properly configured in plugin settings.' );
+					$order->add_order_note( 'Falling back to Order Status API' );
+				}
+				$status = $this->paymentHandler->orderStatus( $params["order_id"] );
+				return $status['status'];
 			}
 			return $params['status'];
 		}
@@ -360,6 +364,19 @@ function juspay_init_payment_class() {
 					$order->add_order_note( "Payment Method : $paymentMethod ($paymentMethodType) - Juspay Payment Id: " . $order_id );
 				}
 			}
+		}
+
+		function maybe_disable_admin_new_order_email( $enabled, $order ) {
+			if ( ! $order || ! is_a( $order, 'WC_Order' ) ) {
+				return $enabled;
+			}
+
+			// If it's a Juspay payment and status is on-hold, disable admin email
+			if ( $order->get_payment_method() === 'juspay_payment' && $order->get_status() === 'on-hold' ) {
+				return false;
+			}
+
+			return $enabled;
 		}
 
 		function get_status_message( $order ) {
@@ -448,10 +465,6 @@ function juspay_init_payment_class() {
 				$params['customer_id'] = $customer_id;
 				$params['payment_page_client_id'] = $this->get_option( 'client_id' );
 				$params['action'] = "paymentPage";
-				if ( get_woocommerce_currency() != 'INR' ) {
-
-					$params['metadata.JUSPAY:gateway_reference_id'] = get_woocommerce_currency(); // Use currency as the Gateway Reference ID for non-INR currencies
-				}
 				$params['return_url'] = $this->notify_url;
 
 				$custom_params = $this->get_option( 'custom_params' );
