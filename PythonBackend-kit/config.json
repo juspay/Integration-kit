@@ -1,0 +1,8 @@
+{
+    "MERCHANT_ID": "merchant_id",
+    "PAYMENT_PAGE_CLIENT_ID": "clint_id",
+    "API_KEY": "Your-API-KEY",
+    "BASE_URL": "https://sandbox.juspay.in",
+    "ENABLE_LOGGING": true,
+    "RESPONSE_KEY": "Value"
+}
