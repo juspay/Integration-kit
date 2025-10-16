@@ -110,11 +110,10 @@ class PaymentHandler {
 			}
 			$paramsString = urlencode( substr( $paramsString, 0, strlen( $paramsString ) - 1 ) );
 			$hash = base64_encode( hash_hmac( "sha256", $paramsString, $secret, true ) );
-			if ( urldecode( $hash ) == $expectedHash )
+			if ( urldecode( $hash ) == $expectedHash ) {
 				return true;
-			else {
-				$comment = json_encode( [ "computeHash" => urldecode( $hash ), "expectedHash" => $expectedHash ] );
-				$order->addCommentToStatusHistory( $comment, false );
+			} else {
+				$order->addCommentToStatusHistory( 'ERROR: Payment gateway response signature verification failed.', false );
 				$order->save();
 				return false;
 			}
@@ -148,7 +147,6 @@ class PaymentEntity {
 		$paymentHandlerConfig = PaymentHandlerConfig::getInstance();
 		$url = $paymentHandlerConfig->getBaseUrl() . $path;
 		$curlObject = curl_init();
-		$log = array();
 		curl_setopt( $curlObject, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $curlObject, CURLOPT_HEADER, true );
 		curl_setopt( $curlObject, CURLOPT_NOBODY, false );
@@ -165,7 +163,6 @@ class PaymentEntity {
 		if ( $method == RequestMethod::GET ) {
 			curl_setopt( $curlObject, CURLOPT_HTTPHEADER, $headers );
 			curl_setopt( $curlObject, CURLOPT_HTTPGET, 1 );
-			$log["method"] = "GET";
 			if ( $params != null ) {
 				$encodedParams = http_build_query( $params );
 				if ( $encodedParams != null && $encodedParams != "" ) {
@@ -176,10 +173,8 @@ class PaymentEntity {
 			array_push( $headers, 'Content-Type: application/json' );
 			curl_setopt( $curlObject, CURLOPT_HTTPHEADER, $headers );
 			curl_setopt( $curlObject, CURLOPT_POST, 1 );
-			$log["method"] = "POST";
 			if ( $params != null ) {
 				$encodedParams = json_encode( $params );
-				$log["request_params"] = $encodedParams;
 				curl_setopt( $curlObject, CURLOPT_POSTFIELDS, $encodedParams );
 			}
 		} else {
@@ -188,15 +183,12 @@ class PaymentEntity {
 			curl_setopt( $curlObject, CURLOPT_HTTPHEADER, $headers );
 
 			curl_setopt( $curlObject, CURLOPT_POST, 1 );
-			$log["method"] = "POST";
 			if ( $params != null ) {
 				$body = http_build_query( $params );
-				$log["request_params"] = $body;
 				curl_setopt( $curlObject, CURLOPT_POSTFIELDS, $body );
 			}
 		}
-		$log["headers"] = $headers;
-		$order->addCommentToStatusHistory( json_encode( $log ), false );
+		$order->addCommentToStatusHistory( 'API Call: Initiating ' . $method . ' request to ' . $path, false );
 		$order->save();
 		curl_setopt( $curlObject, CURLOPT_URL, $url );
 		// Handle CA certificates
@@ -221,10 +213,27 @@ class PaymentEntity {
 			$encodedResponse = substr( $response, $headerSize );
 			$responseBody = json_decode( $encodedResponse, true );
 			$responseHeaders = substr( $response, 0, $headerSize );
-			$log = [ "status_code" => $responseCode, "response" => $encodedResponse, "response_headers" => $responseHeaders ];
+			$log = [ 
+				"status_code" => $responseCode,
+			];
+			if ( isset( $responseBody['status'] ) ) {
+				$log['status'] = $responseBody['status'];
+			}
+			if ( isset( $responseBody['payment_method'] ) ) {
+				$log['payment_method'] = $responseBody['payment_method'];
+			}
+			if ( isset( $responseBody['payment_method_type'] ) ) {
+				$log['payment_method_type'] = $responseBody['payment_method_type'];
+			}
+			if ( isset( $responseBody['error_code'] ) ) {
+				$log['error_code'] = $responseBody['error_code'];
+			}
+			if ( isset( $responseBody['error_info'] ) ) {
+				$log['error_info'] = $responseBody['error_info'];
+			}
 			curl_close( $curlObject );
 			if ( $responseCode >= 200 && $responseCode < 300 ) {
-				$order->addCommentToStatusHistory( json_encode( $log ), false );
+				$order->addCommentToStatusHistory( 'API Response: Received the response for ' . $path . ': ' . json_encode( $log ), false );
 				$order->save();
 				return $responseBody;
 			} else {
@@ -244,7 +253,7 @@ class PaymentEntity {
 						$errorMessage = $status;
 					}
 				}
-				$order->addCommentToStatusHistory( 'Error: ' . json_encode( $log ), false );
+				$order->addCommentToStatusHistory( 'ERROR: API call returned a non-successful response for ' . $path . ': ' . json_encode( $log ), false );
 				$order->save();
 				throw new APIException( $responseCode, $status, $errorCode, $errorMessage );
 			}
