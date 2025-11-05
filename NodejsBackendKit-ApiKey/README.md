@@ -13,8 +13,8 @@ ensure fields like API_KEY, MERCHANT_ID, PAYMENT_PAGE_CLIENT_ID & BASE_URL are p
 ### Rest endpoints
 | Environment       | Endpoint                             |
 |-------------------|--------------------------------------|
-| Sandbox (default) | https://smartgatewayuat.hdfcbank.com |
-| Production        | 	https://smartgateway.hdfcbank.com   |
+| Sandbox (default) | https://smartgateway.hdfcuat.bank.in |
+| Production        | 	https://smartgateway.hdfc.bank.in  |
 configure this in BASE_URL
 
 ## Quick run this project using jetty?
