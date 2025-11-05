@@ -8,8 +8,8 @@ This is a sample php kit using php development web server.
 ### Rest endpoints
 | Environment       | Endpoint                             |
 |-------------------|--------------------------------------|
-| Sandbox (default) | https://smartgatewayuat.hdfcbank.com |
-| Production        | 	https://smartgateway.hdfcbank.com  |
+| Sandbox (default) | https://smartgateway.hdfcuat.bank.in |
+| Production        | 	https://smartgateway.hdfc.bank.in  |
 
 configure this in BASE_URL
 
