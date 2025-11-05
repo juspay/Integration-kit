@@ -2,7 +2,7 @@
     "API_KEY": "VALUE",
     "MERCHANT_ID": "VALUE",
     "PAYMENT_PAGE_CLIENT_ID": "VALUE",
-    "BASE_URL": "https://smartgatewayuat.hdfcbank.com",
+    "BASE_URL": "https://smartgateway.hdfc.bank.in",
     "ENABLE_LOGGING": true,
     "LOGGING_PATH": "./logs/PaymentHandler.log",
     "RESPONSE_KEY": "VALUE"
