@@ -14,8 +14,8 @@ Place config.json file inside src/main/resources folder, ensure fields like API_
 ### Rest endpoints
 | Environment       | Endpoint                             |
 |-------------------|--------------------------------------|
-| Sandbox (default) | https://smartgatewayuat.hdfcbank.com |
-| Production        | 	https://smartgateway.hdfcbank.com   |
+| Sandbox (default) | https://smartgateway.hdfcuat.bank.in |
+| Production        | 	https://smartgateway.hdfc.bank.in  |
 configure this in BASE_URL
 
 ## Contents
