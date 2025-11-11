@@ -1,1 +1,1 @@
-{"API_KEY": "YOUR_API_KEY:","MERCHANT_ID":"YOUR_MERCHANT_ID","PAYMENT_PAGE_CLIENT_ID":"hdfcmaster","BASE_URL":"https://smartgatewayuat.hdfcbank.com","ENABLE_LOGGING": true,"RESPONSE_KEY": "YOUR_RESPONSE_KEY"}
+{"API_KEY": "YOUR_API_KEY:","MERCHANT_ID":"YOUR_MERCHANT_ID","PAYMENT_PAGE_CLIENT_ID":"hdfcmaster","BASE_URL":"https://smartgateway.hdfcuat.bank.in","ENABLE_LOGGING": true,"RESPONSE_KEY": "YOUR_RESPONSE_KEY"}
