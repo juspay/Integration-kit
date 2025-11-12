@@ -4,8 +4,8 @@
 Plugin Name: SmartGateway
 Plugin URI: https://juspay.in/
 Description:  WooCommerce payment plugin for Juspay.in
-Version: 1.3.10
-Updated: 22/09/2025
+Version: 1.4.0
+Updated: 12/11/2025
 Author: Juspay Technologies
 Author URI: https://juspay.in/
 License: GPLv2 or later
@@ -74,7 +74,6 @@ function juspay_init_payment_class() {
 			$this->title = $this->get_option( 'title' );
 			$this->description = $this->get_option( 'description' );
 			$this->instructions = $this->get_option( 'instructions' );
-			$this->notify_url = home_url( '/wc-api/wc_juspay' );
 
 			if ( $this->get_option( 'enabled' ) == "yes" ) {
 				try {
@@ -465,7 +464,7 @@ function juspay_init_payment_class() {
 				$params['customer_id'] = $customer_id;
 				$params['payment_page_client_id'] = $this->get_option( 'client_id' );
 				$params['action'] = "paymentPage";
-				$params['return_url'] = $this->notify_url;
+				$params['return_url'] = home_url( '/?wc-api=wc_juspay' );
 
 				$custom_params = $this->get_option( 'custom_params' );
 
