@@ -61,13 +61,13 @@ function juspay_init_payment_class() {
 
 			switch ( $this->get_option( 'mode' ) ) {
 				case "sandbox":
-					$this->base_url = "https://smartgatewayuat.hdfcbank.com";
+					$this->base_url = "https://smartgateway.hdfcuat.bank.in";
 					break;
 				case "production":
-					$this->base_url = "https://smartgateway.hdfcbank.com";
+					$this->base_url = "https://smartgateway.hdfc.bank.in";
 					break;
 				default:
-					$this->base_url = "https://smartgatewayuat.hdfcbank.com";
+					$this->base_url = "https://smartgateway.hdfcuat.bank.in";
 					break;
 			}
 
@@ -556,7 +556,7 @@ function juspay_init_payment_class() {
 			$order = wc_get_order( $orderId );
 
 			$merchant_id = $this->paymentHandlerConfig->getMerchantId();
-			$apiUrl = $this->get_option( 'mode' ) == 'sandbox' ? 'https://smartgatewayuat.hdfcbank.com/orders' : 'https://smartgateway.hdfcbank.com/orders';
+			$apiUrl = $this->get_option( 'mode' ) == 'sandbox' ? 'https://smartgateway.hdfcuat.bank.in/orders' : 'https://smartgateway.hdfc.bank.in/orders';
 			$apiKey = $this->paymentHandlerConfig->getApiKey();
 
 			$params = array();
