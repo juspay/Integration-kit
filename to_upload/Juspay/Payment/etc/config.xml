@@ -17,8 +17,8 @@
                 <model>Juspay\Payment\Model\PaymentMethod</model>
                 <redirect_url>juspay_payment/standard/redirect</redirect_url>
                 <return_url>juspay_payment/standard/response</return_url>
-                <api_url_sandbox>https://smartgatewayuat.hdfcbank.com/gateway/orders</api_url_sandbox>
-                <api_url>https://smartgateway.hdfcbank.com/gateway/orders</api_url>
+                <api_url_sandbox>https://smartgateway.hdfcuat.bank.in/gateway/orders</api_url_sandbox>
+                <api_url>https://smartgateway.hdfc.bank.in/gateway/orders</api_url>
                 <webhook>1</webhook>
             </smartgateway>
         </payment>

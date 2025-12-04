@@ -83,13 +83,13 @@ abstract class JuspayPayment extends \Magento\Framework\App\Action\Action implem
 
 		switch ( $this->config->getMode() ) {
 			case "sandbox":
-				$this->base_url = "https://smartgatewayuat.hdfcbank.com";
+				$this->base_url = "https://smartgateway.hdfcuat.bank.in";
 				break;
 			case "production":
-				$this->base_url = "https://smartgateway.hdfcbank.com";
+				$this->base_url = "https://smartgateway.hdfc.bank.in";
 				break;
 			default:
-				$this->base_url = "https://smartgatewayuat.hdfcbank.com";
+				$this->base_url = "https://smartgateway.hdfcuat.bank.in";
 				break;
 		}
 

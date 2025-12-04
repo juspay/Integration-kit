@@ -249,7 +249,7 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 		$refundTransactionId = $payment->getOrder()->getPayment()->getData( 'refund_transaction_id' );
 
 		$merchant_id = $this->config->getMerchantId();
-		$apiUrl = $this->config->getMode() == 'sandbox' ? 'https://smartgatewayuat.hdfcbank.com/orders' : 'https:/smartgateway.hdfcbank.com/orders';
+		$apiUrl = $this->config->getMode() == 'sandbox' ? 'https://smartgateway.hdfcuat.bank.in/orders' : 'https:/smartgateway.hdfc.bank.in/orders';
 		$apiKey = $this->config->getApiKey();
 
 		$params = array();
@@ -349,6 +349,7 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 			$order_status = $order->getConfig()->getStateDefaultStatus( Order::STATE_PROCESSING );
 			$order->setStatus( $order_status );
 			$order->setCanSendNewEmailFlag( true );
+			$order->save();
 
 			if ( $order->canInvoice() ) {
 				$invoice = $this->_invoiceService->prepareInvoice( $order );
