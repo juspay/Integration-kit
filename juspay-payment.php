@@ -4,8 +4,8 @@
 Plugin Name: SmartGateway
 Plugin URI: https://juspay.in/
 Description:  WooCommerce payment plugin for Juspay.in
-Version: 1.4.0
-Updated: 12/11/2025
+Version: 1.4.1
+Updated: 05/12/2025
 Author: Juspay Technologies
 Author URI: https://juspay.in/
 License: GPLv2 or later
