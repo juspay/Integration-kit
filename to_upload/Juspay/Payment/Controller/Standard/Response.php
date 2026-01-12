@@ -30,7 +30,7 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 				);
 			}
 
-			$statusParams = [ 
+			$statusParams = [
 				"order_id" => isset( $params['order_id'] ) ? $params['order_id'] : '',
 				"status" => isset( $params['status'] ) ? $params['status'] : '',
 				"signature" => isset( $params['signature'] ) ? $params['signature'] : '',
@@ -137,7 +137,7 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 				break;
 			case "PENDING":
 			case "PENDING_VBV":
-				$message = "Thank you for shopping with us. Your payment is currently being processed. Kindly check the status after some time.";
+				$message = "Please note that your payment is currently being processed. Kindly check the status after some time.";
 				break;
 			case "AUTHORIZATION_FAILED":
 			case "AUTHENTICATION_FAILED":
