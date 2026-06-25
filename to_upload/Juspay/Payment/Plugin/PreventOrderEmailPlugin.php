@@ -4,7 +4,6 @@ namespace Juspay\Payment\Plugin;
 
 use Juspay\Payment\Model\Config;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Psr\Log\LoggerInterface;
 
 class PreventOrderEmailPlugin {
@@ -17,31 +16,71 @@ class PreventOrderEmailPlugin {
 	}
 
 	/**
-	 * Prevent order email sending for Juspay pending payments
+	 * Prevent order/invoice email sending for Juspay pending payments.
+	 * Works for OrderSender (receives Order) and InvoiceSender (receives Invoice).
 	 *
-	 * @param OrderSender $subject
-	 * @param Order $order
+	 * @param mixed $subject OrderSender or InvoiceSender
+	 * @param mixed $entity  Order or Invoice
 	 * @param bool $forceSyncMode
 	 * @return array
 	 */
-	public function beforeSend( OrderSender $subject, Order $order, $forceSyncMode = false ) {
+	public function beforeSend( $subject, $entity, $forceSyncMode = false ) {
 		if ( ! $this->config->isPluginEnabled() ) {
-			return [ $order, $forceSyncMode ];
+			return [ $entity, $forceSyncMode ];
 		}
-		// Check if this is a Juspay payment with pending status
-		if ( $this->shouldPreventEmail( $order ) ) {
-			$this->logger->info( 'Preventing order email for Juspay order: ' . $order->getIncrementId() );
 
-			// Set flags to prevent email
+		$order = $this->resolveOrder( $entity );
+		if ( ! $order ) {
+			return [ $entity, $forceSyncMode ];
+		}
+
+		if ( $this->shouldPreventEmail( $order ) ) {
+			$this->logger->info( 'Preventing email for Juspay order: ' . $order->getIncrementId() );
+
 			$order->setCanSendNewEmailFlag( false );
 			$order->setEmailSent( true );
 			$order->setIsCustomerNotified( false );
-
-			// Return false to prevent email sending
-			return [ null, false ]; // This will prevent the email from being sent
 		}
 
-		return [ $order, $forceSyncMode ];
+		// Always return the original entity to avoid TypeError from null argument
+		return [ $entity, $forceSyncMode ];
+	}
+
+	/**
+	 * After send - suppress result if email should have been prevented
+	 *
+	 * @param mixed $subject OrderSender or InvoiceSender
+	 * @param bool $result
+	 * @param mixed $entity Order or Invoice
+	 * @return bool
+	 */
+	public function afterSend( $subject, $result, $entity ) {
+		if ( ! $this->config->isPluginEnabled() ) {
+			return $result;
+		}
+
+		$order = $this->resolveOrder( $entity );
+		if ( $order && $this->shouldPreventEmail( $order ) ) {
+			return false;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Resolve Order object from either an Order or Invoice instance.
+	 *
+	 * @param mixed $entity
+	 * @return Order|null
+	 */
+	private function resolveOrder( $entity ) {
+		if ( $entity instanceof Order ) {
+			return $entity;
+		}
+		if ( $entity instanceof \Magento\Sales\Model\Order\Invoice && $entity->getOrder() ) {
+			return $entity->getOrder();
+		}
+		return null;
 	}
 
 	/**
@@ -51,7 +90,6 @@ class PreventOrderEmailPlugin {
 	 * @return bool
 	 */
 	private function shouldPreventEmail( Order $order ) {
-		// Check multiple conditions
 		if ( $order->getData( 'juspay_payment_pending' ) ) {
 			return true;
 		}
@@ -61,28 +99,11 @@ class PreventOrderEmailPlugin {
 		}
 
 		if ( $order->getPayment() && $order->getPayment()->getMethod() === 'smartgateway' ) {
-			// Check if order is still in pending payment state
 			if ( $order->getState() === Order::STATE_PENDING_PAYMENT ) {
 				return true;
 			}
 		}
 
 		return false;
-	}
-
-	/**
-	 * After send - log if email was sent despite prevention attempts
-	 *
-	 * @param OrderSender $subject
-	 * @param bool $result
-	 * @param Order $order
-	 * @return bool
-	 */
-	public function afterSend( OrderSender $subject, $result, Order $order ) {
-		if ( $result && $this->shouldPreventEmail( $order ) && $this->config->isPluginEnabled() ) {
-			$this->logger->warning( 'Order email was sent despite prevention attempts for order: ' . $order->getIncrementId() );
-		}
-
-		return $result;
 	}
 }

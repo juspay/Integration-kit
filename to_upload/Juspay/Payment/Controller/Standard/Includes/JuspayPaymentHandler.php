@@ -46,12 +46,17 @@ class PaymentHandler {
 		\Magento\Framework\DataObject $payment, $response ) {
 
 		if ( in_array( $order->getStatus(), [ 'processing', 'complete', 'closed', 'canceled' ] ) ) {
-			$this->logger->info( "postProcessing skipped: Order {$order->getIncrementId()} already in terminal state." );
 			return;
 		}
 
 		$payment->setTransactionId( $response['order_id'] );
 		$payment->setTransactionAdditionalInfo( 'status_message', $response['status'] );
+
+		// Clear fraud detection flags if order was in Suspected Fraud state
+   		 if ( $response['status'] === 'CHARGED' || $response['status'] === 'COD_INITIATED' ) {
+    	    $payment->setIsFraudDetected( false );
+    	    $payment->setIsTransactionPending( false );
+    	}
 
 		switch ( $response['status'] ) {
 			case "CHARGED":
@@ -73,7 +78,7 @@ class PaymentHandler {
 				break;
 		}
 		$order->save();
-		$payment->place();
+		$payment->save();
 	}
 
 	/**

@@ -57,10 +57,13 @@ class Webhook extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 		$order = $this->getOrderByIncrementId( $order_id );
 
 		if ( $order ) {
-			if ( $order->getStatus() == 'pending_payment' || $order->getStatus() == 'pending' ) {
+			// Allow processing for pending, pending_payment, and fraud (Suspected Fraud) orders
+			$processableStatuses = [ 'pending_payment', 'pending', 'fraud' ];
+			if ( in_array( $order->getStatus(), $processableStatuses ) ) {
 				$this->addOrderNote( $order_id, "SmartGateway payment successful (via SmartGateway Webhook)" );
 				$payment = $order->getPayment();
 				$params['txn_id'] = $params['content']['order']['txn_uuid'];
+				// Fraud flag clearing is handled inside postProcessing()
 				$paymentMethod->postProcessing( $order, $payment, $params );
 			} else {
 				$this->addOrderNote( $order_id, "Order Status: " . $order->getStatus() );
