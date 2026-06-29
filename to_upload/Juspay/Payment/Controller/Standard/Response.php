@@ -52,13 +52,14 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 
 
 					if ( $status != 'NEW' ) {
-						$this->paymentHandler->postProcessing( $order, $payment, $params );
+						$verifiedResponse = [ 'order_id' => $params['order_id'], 'status' => $status ];
+						$this->paymentHandler->postProcessing( $order, $payment, $verifiedResponse );
 					}
 					$order = $this->getOrderByIncrementId( $params['order_id'] );
 
 					if ( $status == 'CHARGED' || $status == 'COD_INITIATED' ) {
 
-						if ( $order->getStatus() == 'pending_payment' || $order->getStatus() == 'pending' ) {
+						if ( in_array( $order->getStatus(), [ 'pending_payment', 'pending', 'fraud' ] ) ) {
 							$this->_createInvoice( $params['order_id'] );
 						}
 						$order->setCanSendNewEmailFlag( true );
@@ -88,7 +89,7 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 						}
 					}
 
-					$orderNote = 'Transaction Completed. Order Status: ' . $params['status'];
+					$orderNote = 'Transaction Completed. Order Status: ' . $status;
 					$this->addOrderNote( $params['order_id'], $orderNote, true );
 
 				} else {
@@ -112,6 +113,14 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 	}
 
 	protected function get_order_status( $params ) {
+		$status = strtoupper( trim( (string) ( $params['status'] ?? '' ) ) );
+        $signature = trim( (string) ( $params['signature'] ?? '' ) );
+
+        if ( $status === 'NEW' && $signature === '' ) {
+            $this->addOrderNote( $params['order_id'], 'No payment attempt detected (status NEW without signature). Validating status via Order Status API.' );
+            $order = $this->paymentHandler->orderStatus( $params["order_id"] );
+            return $order['status'];
+        }
 		if ( $this->paymentHandler->validateHMAC_SHA256( $params ) === false ) {
 			$this->addOrderNote( $params['order_id'], "ValidationParams: " . json_encode( $params ) );
 			$orderNote = 'Signature verification failed. Ensure that the \'Response Key\' is properly configured in plugin settings.';
@@ -123,7 +132,7 @@ class Response extends \Juspay\Payment\Controller\Standard\JuspayPayment {
 			return $order['status'];
 		}
 		$order = $this->paymentHandler->orderStatus( $params["order_id"] );
-		return $params['status'];
+		return $order['status'];
 	}
 
 	protected function get_status_message( $order ) {

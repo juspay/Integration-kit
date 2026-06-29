@@ -22,8 +22,11 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 	 * @var string
 	 */
 	protected $_code = 'smartgateway';
-	protected $_isGateway = false;
+	protected $_isGateway = true;
 	protected $_isOffline = false;
+	protected $_isInitializeNeeded = true;
+	protected $_canAuthorize = false;
+	protected $_canCapture = false;
 	protected $helper;
 	protected $logger;
 	protected $_minAmount = null;
@@ -326,6 +329,22 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 	}
 
 
+	/**
+	 * Initialize payment method — called during quoteManagement->submit().
+	 * Sets the order to pending_payment state to prevent Magento's default
+	 * state handling from marking the order as "Suspected Fraud".
+	 *
+	 * @param string $paymentAction
+	 * @param \Magento\Framework\DataObject $stateObject
+	 * @return $this
+	 */
+	public function initialize( $paymentAction, $stateObject ) {
+		$stateObject->setState( Order::STATE_PENDING_PAYMENT );
+		$stateObject->setStatus( Order::STATE_PENDING_PAYMENT );
+		$stateObject->setIsNotified( false );
+		return $this;
+	}
+
 	public function getConfig( $key ) {
 		return $this->getConfigData( $key );
 	}
@@ -339,11 +358,18 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 	public function postProcessing( \Magento\Sales\Model\Order $order, \Magento\Framework\DataObject $payment, $response ) {
 
 		if ( in_array( $order->getStatus(), [ 'processing', 'complete', 'closed', 'canceled' ] ) ) {
-			$this->logger->info( "postProcessing skipped: Order {$order->getIncrementId()} already in terminal state." );
+			$this->plog->info( "postProcessing skipped: Order {$order->getIncrementId()} already in terminal state." );
 			return;
 		}
 		try {
 			$order_id = $order->getIncrementId();
+
+			// Clear fraud detection flags if order was in Suspected Fraud state
+			if ( $order->getStatus() === 'fraud' || $order->getState() === Order::STATE_PAYMENT_REVIEW ) {
+				$payment->setIsFraudDetected( false );
+				$payment->setIsTransactionPending( false );
+				$this->addOrderNote( $order_id, 'Clearing Suspected Fraud flag — payment confirmed by gateway.' );
+			}
 
 			$order->setState( Order::STATE_PROCESSING );
 			$order_status = $order->getConfig()->getStateDefaultStatus( Order::STATE_PROCESSING );
@@ -387,7 +413,7 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod {
 			$payment->setTransactionId( $order_id );
 			$payment->setTransactionAdditionalInfo( 'status_message', $order_status );
 			$payment->setIsTransactionClosed( 0 );
-			$payment->place();
+			$payment->save();
 
 		} catch (Exception $e) {
 			$this->addOrderNote( $order_id, "Webhook PostProcessing Error: ." . $e->getMessage() );
